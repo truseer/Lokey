@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LokeyLib", "CryptoStickLib\LokeyLib.csproj", "{FF3482DC-1C80-4B7B-A5FC-1381B0DEC6F9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LokeyLib", "LokeyLib\LokeyLib.csproj", "{FF3482DC-1C80-4B7B-A5FC-1381B0DEC6F9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PadTest", "PadTest\PadTest.csproj", "{9A07E20B-7F5B-4624-9A19-DC80167EC1D6}"
 EndProject
