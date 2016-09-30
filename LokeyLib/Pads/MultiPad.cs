@@ -286,7 +286,7 @@ namespace LokeyLib
                 pad.AppendSubpad(spad3);
                 testsSucceeded &= WriteTestResult("Appended Pad Size", pad.PadSize == multiPadSize);
 
-                byte[] chunk1 = pad.GetPadBytes(simplePadSize - 1024, 2048);
+                /*byte[] chunk1 =*/ pad.GetPadBytes(simplePadSize - 1024, 2048);
                 chunks = pad.UnusedChunks.ToArray();
                 testsSucceeded &= WriteTestResult("Spanning Chunk", chunks.Length == 2 
                     && chunks[0].Start == 0 && chunks[0].Size == 4096
@@ -296,8 +296,8 @@ namespace LokeyLib
                 chunks = spad2.UnusedChunks.ToArray();
                 testsSucceeded &= WriteTestResult("Subpad 2 Chunk", chunks.Length == 1 && chunks[0].Start == 1024 && chunks[0].Size == simplePadSize - 1024);
 
-                byte[] chunk2 = pad.GetPadBytes(simplePadSize + simplePadSize - 512, 512);
-                byte[] chunk3 = pad.GetPadBytes(simplePadSize + simplePadSize, 512);
+                /*byte[] chunk2 =*/ pad.GetPadBytes(simplePadSize + simplePadSize - 512, 512);
+                /*byte[] chunk3 =*/ pad.GetPadBytes(simplePadSize + simplePadSize, 512);
                 chunks = pad.UnusedChunks.ToArray();
                 testsSucceeded &= WriteTestResult("Adjoining Chunk", chunks.Length == 3
                     && chunks[0].Start == 0 && chunks[0].Size == 4096

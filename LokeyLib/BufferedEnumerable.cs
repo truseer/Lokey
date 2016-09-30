@@ -29,22 +29,22 @@ namespace LokeyLib
 {
     public class BufferedEnumerable<T> : IEnumerable<T>
     {
-        private class BufferedEnumerator<T> : IEnumerator<T>
+        private class BufferedEnumerator<U> : IEnumerator<U>
         {
-            private IEnumerator<T> iterator;
-            private CircularBuffer<T> buffer;
-            private T currentItem;
-            private readonly T[] bufferedStartingItems;
+            private IEnumerator<U> iterator;
+            private CircularBuffer<U> buffer;
+            private U currentItem;
+            private readonly U[] bufferedStartingItems;
 
-            public BufferedEnumerator(T[] itemsToCache, IEnumerable<T> iterable)
+            public BufferedEnumerator(U[] itemsToCache, IEnumerable<U> iterable)
             {
                 bufferedStartingItems = itemsToCache;
                 iterator = iterable.GetEnumerator();
-                buffer = new CircularBuffer<T>(bufferedStartingItems);
-                currentItem = default(T);
+                buffer = new CircularBuffer<U>(bufferedStartingItems);
+                currentItem = default(U);
             }
 
-            public T Current { get { return currentItem; } }
+            public U Current { get { return currentItem; } }
 
             object IEnumerator.Current { get { return currentItem; } }
 
@@ -67,8 +67,8 @@ namespace LokeyLib
             public void Reset()
             {
                 iterator.Reset();
-                buffer = new CircularBuffer<T>(bufferedStartingItems);
-                currentItem = default(T);
+                buffer = new CircularBuffer<U>(bufferedStartingItems);
+                currentItem = default(U);
             }
         }
 

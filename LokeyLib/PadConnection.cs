@@ -124,7 +124,7 @@ namespace LokeyLib
 
         private string GetPathRelativeToIndex(string path)
         {
-            return UtilityFunctions.GetRelativePath(connectionFile.Directory.FullName, path);
+            return UtilityFunctions.GetRelativePath(connectionFile.FullName, path);
         }
     }
 }

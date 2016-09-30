@@ -31,7 +31,11 @@ namespace LokeyLib
         {
             get
             {
-                return DriveInfo.GetDrives().Where(drive => drive.DriveType == DriveType.Removable);
+				List<DriveInfo> drives = DriveInfo.GetDrives ().ToList();
+				return drives.Where (drive => drive.DriveType == DriveType.Removable
+					|| (drive.DriveType == DriveType.Fixed
+						&& (drive.RootDirectory.FullName.StartsWith("/media/")
+							|| drive.RootDirectory.FullName.StartsWith("/mnt/"))));
             }
         }
 
