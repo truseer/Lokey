@@ -49,7 +49,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CryptoStickLib\LokeyLib.csproj">
+    <ProjectReference Include="..\LokeyLib\LokeyLib.csproj">
       <Project>{FF3482DC-1C80-4B7B-A5FC-1381B0DEC6F9}</Project>
       <Name>LokeyLib</Name>
     </ProjectReference>
