@@ -77,6 +77,32 @@ namespace LokeyLib
 
         static private Aes256Ctr encryptor = new Aes256Ctr();
 
+        private static byte[] BuildEncryptedHeader(byte[] headerIv, byte[] headerKey, long footerOffset, byte[] padIv, byte[] padKey)
+        {
+            byte[] footerOffsetBytes = BitConverter.GetBytes(footerOffset);
+            byte[] encryptedHeaderBytes = new byte[EncryptedHeaderLength];
+            Array.Copy(footerOffsetBytes, encryptedHeaderBytes, FooterOffsetLength);
+            Array.Copy(padIv, 0, encryptedHeaderBytes, FooterOffsetLength, PadIvLength);
+            Array.Copy(padKey, 0, encryptedHeaderBytes, FooterOffsetLength + PadIvLength, PadKeyLength);
+            return encryptor.EncryptBytes(headerKey, headerIv, encryptedHeaderBytes, true);
+        }
+
+        private static void WriteHeader(FileStream fs, byte[] headerIv, byte[] encryptedHeaderBytes)
+        {
+            fs.Write(headerIv, 0, HeaderIvLength);
+            fs.Write(encryptedHeaderBytes, 0, EncryptedHeaderLength);
+        }
+
+        private void WriteHeader(FileStream fs)
+        {
+            WriteHeader(fs, headerIv, BuildEncryptedHeader());
+        }
+
+        private byte[] BuildEncryptedHeader()
+        {
+            return BuildEncryptedHeader(headerIv, headerKey, footerOffset, padIv, padKey);
+        }
+
         public static EncryptedPad Create(string filePath, byte[] key, IPadDataGenerator rng, ulong length, int chunkSize = 4096)
         {
             ulong longChunkSize = (chunkSize <= 0) ? 4096UL : (ulong) chunkSize;
@@ -84,16 +110,10 @@ namespace LokeyLib
             byte[] padKey = rng.GetPadData(PadKeyLength);
             byte[] padIv = rng.GetPadData(PadIvLength);
             long footerOffset = HeaderLength + (long)length;
-            byte[] footerOffsetBytes = BitConverter.GetBytes(footerOffset);
-            byte[] encryptedHeaderBytes = new byte[EncryptedHeaderLength];
-            Array.Copy(footerOffsetBytes, encryptedHeaderBytes, FooterOffsetLength);
-            Array.Copy(padIv, 0, encryptedHeaderBytes, FooterOffsetLength, PadIvLength);
-            Array.Copy(padKey, 0, encryptedHeaderBytes, FooterOffsetLength + PadIvLength, PadKeyLength);
-            encryptedHeaderBytes = encryptor.EncryptBytes(key, headerIv, encryptedHeaderBytes, true);
+            byte[] encryptedHeaderBytes = BuildEncryptedHeader(headerIv, key, footerOffset, padIv, padKey);
             using (FileStream fs = File.Open(filePath, FileMode.CreateNew, FileAccess.Write))
             {
-                fs.Write(headerIv, 0, HeaderIvLength);
-                fs.Write(encryptedHeaderBytes, 0, EncryptedHeaderLength);
+                WriteHeader(fs, headerIv, encryptedHeaderBytes);
                 ulong padBytesWritten = 0UL;
                 while(padBytesWritten < length)
                 {
@@ -109,9 +129,13 @@ namespace LokeyLib
 
         public static EncryptedPad Load(FileInfo padFile, byte[] key)
         {
+            byte[] headerIv;
+            long footerOffset;
+            byte[] padIv;
+            byte[] padKey;
             using (FileStream fs = padFile.Open(FileMode.Open, FileAccess.Read))
             {
-                byte[] headerIv = new byte[HeaderIvLength];
+                headerIv = new byte[HeaderIvLength];
                 int bytesRead = 0;
                 while (bytesRead < headerIv.Length)
                 {
@@ -130,14 +154,49 @@ namespace LokeyLib
                     bytesRead += numBytes;
                 }
                 encryptedHeader = encryptor.DecryptBytes(key, headerIv, encryptedHeader, true);
-                long footerOffset = BitConverter.ToInt64(encryptedHeader, 0);
-                byte[] padIv = new byte[PadIvLength];
+                footerOffset = BitConverter.ToInt64(encryptedHeader, 0);
+                padIv = new byte[PadIvLength];
                 Array.Copy(encryptedHeader, FooterOffsetLength, padIv, 0, padIv.Length);
-                byte[] padKey = new byte[PadKeyLength];
+                padKey = new byte[PadKeyLength];
                 Array.Copy(encryptedHeader, FooterOffsetLength + padIv.Length, padKey, 0, padKey.Length);
-                return new EncryptedPad(padFile, key, headerIv, padKey, padIv, footerOffset);
+            }
+            return new EncryptedPad(padFile, key, headerIv, padKey, padIv, footerOffset);
+        }
+
+        public EncryptedPad CopyTo(string newPadFilePath)
+        {
+            FileInfo copy = pad.CopyTo(newPadFilePath);
+            return EncryptedPad.Load(copy, headerKey);
+        }
+
+        public EncryptedPad CopyTo(DirectoryInfo newPadDir)
+        {
+            if (!newPadDir.Exists)
+                newPadDir.Create();
+            return CopyTo(Path.Combine(newPadDir.FullName, pad.Name));
+        }
+
+        public void UpdateEncryption(byte[] key)
+        {
+            UpdateEncryption(key, headerIv);
+        }
+
+        public void UpdateEncryption(byte[] key, IPadDataGenerator rng)
+        {
+            UpdateEncryption(key, rng.GetPadData(HeaderIvLength));
+        }
+
+        private void UpdateEncryption(byte[] key, byte[] iv)
+        {
+            headerIv = iv;
+            headerKey = key;
+            using (FileStream fs = pad.Open(FileMode.Open, FileAccess.Write))
+            {
+                WriteHeader(fs);
             }
         }
+
+        public FileInfo PadFileInfo {  get { return pad; } }
 
         public override string Identifier { get { return pad.FullName; } }
 
@@ -242,32 +301,60 @@ namespace LokeyLib
                 try
                 {
                     pad = Create("test" + DefaultExt, key, rng, 1U << 26);
-                    foreach(ICryptoAlgorithmFactory factory in CryptoAlgorithmCache.Instance.Algorithms)
+                    string secondPad = "test2" + DefaultExt;
+                    EncryptedPad pad2 = pad.CopyTo(secondPad);
+                    try
                     {
-                        FileInfo testCopy = file.CopyTo("test2.bin");
-                        try
+                        byte[] key2 = rng.GetPadData(KeyLength);
+                        pad2.UpdateEncryption(key2, rng.GetPadData(HeaderIvLength));
+                        pad2 = null;
+                        pad2 = EncryptedPad.Load(new FileInfo(secondPad), key2);
+                        testsSucceeded &= WriteTestResult("Key Update", !UtilityFunctions.ByteArraysEqual(key, key2));
+                        testsSucceeded &= WriteTestResult("IV Update", !UtilityFunctions.ByteArraysEqual(pad.headerIv, pad2.headerIv));
+                        foreach (ICryptoAlgorithmFactory factory in CryptoAlgorithmCache.Instance.Algorithms)
                         {
-                            EncryptedFile eFile = EncryptedFile.CreateFromPlaintextFile(testCopy, pad, factory);
-                            eFile.Encrypt();
-                            testsSucceeded &= WriteTestResult(factory.Name + " Encryption", !UtilityFunctions.FilesEqual(file, testCopy));
-                            FileInfo eCopy = testCopy.CopyTo("test3.bin");
+                            FileInfo testCopy = file.CopyTo("test2.bin");
                             try
                             {
-                                EncryptedFile ptFile = EncryptedFile.CreateFromEncryptedFile(eCopy, pad);
-                                ptFile.Decrypt();
-                                testsSucceeded &= WriteTestResult(factory.Name + " Decryption", UtilityFunctions.FilesEqual(file, eCopy));
+                                EncryptedFile eFile = EncryptedFile.CreateFromPlaintextFile(testCopy, pad, factory);
+                                eFile.Encrypt();
+                                testsSucceeded &= WriteTestResult(factory.Name + " Encryption", !UtilityFunctions.FilesEqual(file, testCopy));
+                                FileInfo eCopy = testCopy.CopyTo("test3.bin");
+                                try
+                                {
+
+                                    FileInfo ctCopy = eCopy.CopyTo("test4.bin");
+                                    try
+                                    {
+                                        EncryptedFile ptFile = EncryptedFile.CreateFromEncryptedFile(eCopy, pad);
+                                        ptFile.Decrypt();
+                                        testsSucceeded &= WriteTestResult(factory.Name + " Decryption", UtilityFunctions.FilesEqual(file, eCopy));
+
+                                        EncryptedFile ptFile2 = EncryptedFile.CreateFromEncryptedFile(ctCopy, pad2);
+                                        ptFile2.Decrypt();
+                                        testsSucceeded &= WriteTestResult(factory.Name + " Pad Update Decryption", UtilityFunctions.FilesEqual(file, ctCopy));
+                                    }
+                                    finally
+                                    {
+                                        ctCopy.Delete();
+                                    }
+                                }
+                                finally
+                                {
+                                    eCopy.Delete();
+                                }
                             }
                             finally
                             {
-                                eCopy.Delete();
+                                testCopy.Delete();
                             }
                         }
-                        finally
-                        {
-                            testCopy.Delete();
-                        }
                     }
-                    testsSucceeded &= WriteTestResult("Template", true);
+                    finally
+                    {
+                        pad2.UnsafeDelete();
+                    }
+                testsSucceeded &= WriteTestResult("Template", true);
                     return testsSucceeded;
                 }
                 finally

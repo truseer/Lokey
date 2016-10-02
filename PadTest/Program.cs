@@ -19,12 +19,7 @@
 
 
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using LokeyLib;
-using System.IO;
 
 namespace PadTest
 {
@@ -43,7 +38,8 @@ namespace PadTest
             testsPassed &= EncryptedFile.RunTest();
             testsPassed &= Aes256Ctr.RunTest();
             testsPassed &= EncryptedPad.RunTest();
-			// The following expects you to have two identical, empty USB sticks connected
+            testsPassed &= EncryptedMultiPad.RunTest();
+            // The following expects you to have two identical, empty USB sticks connected
             testsPassed &= CryptoStick.RunTest();
 
             Console.WriteLine();
