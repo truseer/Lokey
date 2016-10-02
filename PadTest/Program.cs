@@ -41,6 +41,8 @@ namespace PadTest
             testsPassed &= CryptoAlgorithmCache.RunTest();
             testsPassed &= FileBlockEnumerable.RunTest();
             testsPassed &= EncryptedFile.RunTest();
+            testsPassed &= Aes256Ctr.RunTest();
+            testsPassed &= EncryptedPad.RunTest();
 			// The following expects you to have two identical, empty USB sticks connected
             testsPassed &= CryptoStick.RunTest();
 

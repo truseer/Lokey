@@ -58,6 +58,12 @@ namespace LokeyLib
             }
         }
 
+        public void SetCounter(ulong high, ulong low)
+        {
+            lowCount = low;
+            highCount = high;
+        }
+
         private ulong lowCount = 0UL;
 
         private ulong highCount = 0UL;

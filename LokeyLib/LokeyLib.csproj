@@ -7,7 +7,7 @@
     <ProjectGuid>{FF3482DC-1C80-4B7B-A5FC-1381B0DEC6F9}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CryptoStickLib</RootNamespace>
+    <RootNamespace>LokeyLib</RootNamespace>
     <AssemblyName>LokeyLib</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="BufferedEnumerable.cs" />
     <Compile Include="Ciphers\AbstractAesAlgorithm.cs" />
+    <Compile Include="Ciphers\Aes256Ctr.cs" />
     <Compile Include="Ciphers\Aes256CtrPadIvAlgorithm.cs" />
     <Compile Include="Ciphers\Aes256CtrPadIvAlgorithmFactory.cs" />
     <Compile Include="Ciphers\Aes256EcbPadIvAlgorithm.cs" />
@@ -61,6 +62,7 @@
     <Compile Include="Exceptions\InsufficientPadException.cs" />
     <Compile Include="Exceptions\InvalidChunkException.cs" />
     <Compile Include="Exceptions\InvalidEncryptedFileHeaderException.cs" />
+    <Compile Include="Pads\EncryptedPad.cs" />
     <Compile Include="RNGs\IPadDataGenerator.cs" />
     <Compile Include="RNGs\DotNetDefaultPadDataGenerator.cs" />
     <Compile Include="Pads\MultiPad.cs" />
