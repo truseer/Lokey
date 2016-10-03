@@ -22,7 +22,7 @@
 
 namespace LokeyLib
 {
-    class CouldNotCreatePadException : Exception
+    public class CouldNotCreatePadException : Exception
     {
         public CouldNotCreatePadException(string message) : base(message) { }
     }

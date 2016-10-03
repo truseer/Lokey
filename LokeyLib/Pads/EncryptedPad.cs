@@ -24,7 +24,7 @@ using System.Linq;
 
 namespace LokeyLib
 {
-    public class EncryptedPad : AbstractPad
+    public class EncryptedPad : AbstractPad, IEncryptionPadObject
     {
         private FileInfo pad;
         private List<PadChunk> usedChunks = new List<PadChunk>();
@@ -233,7 +233,7 @@ namespace LokeyLib
             return bytes;
         }
 
-        public void UnsafeDelete()
+        public override void UnsafeDelete()
         {
             pad.Delete();
         }

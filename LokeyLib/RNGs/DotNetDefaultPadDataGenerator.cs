@@ -23,7 +23,7 @@ using System.Security.Cryptography;
 
 namespace LokeyLib
 {
-    class DotNetDefaultPadDataGenerator : IPadDataGenerator
+    public class DotNetDefaultPadDataGenerator : IPadDataGenerator
     {
         private RNGCryptoServiceProvider rngProvider;
 

@@ -21,7 +21,7 @@
 ﻿using System;
 namespace LokeyLib
 {
-    class FileOrDirectoryAreadyExistsException : Exception
+    public class FileOrDirectoryAreadyExistsException : Exception
     {
         public FileOrDirectoryAreadyExistsException(string message) : base(message) { }
     }

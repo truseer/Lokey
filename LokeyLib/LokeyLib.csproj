@@ -48,6 +48,9 @@
     <Compile Include="Ciphers\Aes256EcbPadIvAlgorithmFactory.cs" />
     <Compile Include="Ciphers\AesCtrNonce.cs" />
     <Compile Include="CircularBuffer.cs" />
+    <Compile Include="Pads\EncryptedPadConnection.cs" />
+    <Compile Include="Pads\IEncryptionPadObject.cs" />
+    <Compile Include="Pads\IPadConnection.cs" />
     <Compile Include="Pads\AbstractPad.cs" />
     <Compile Include="Ciphers\Aes256CbcPadIvAlgorithm.cs" />
     <Compile Include="Ciphers\Aes256CbcPadIvAlgorithmFactory.cs" />
@@ -64,6 +67,8 @@
     <Compile Include="Exceptions\InvalidEncryptedFileHeaderException.cs" />
     <Compile Include="Pads\EncryptedMultiPad.cs" />
     <Compile Include="Pads\EncryptedPad.cs" />
+    <Compile Include="RNGs\AbstractDevPadDataGenerator.cs" />
+    <Compile Include="RNGs\DevRandomPadDataGenerator.cs" />
     <Compile Include="RNGs\IPadDataGenerator.cs" />
     <Compile Include="RNGs\DotNetDefaultPadDataGenerator.cs" />
     <Compile Include="Pads\MultiPad.cs" />
@@ -74,7 +79,7 @@
     <Compile Include="Pads\PadChunk.cs" />
     <Compile Include="Pads\PadChunkComplement.cs" />
     <Compile Include="Pads\PadChunkSimplifier.cs" />
-    <Compile Include="PadConnection.cs" />
+    <Compile Include="Pads\PadConnection.cs" />
     <Compile Include="PadManagementDirectory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Pads\SimplePad.cs" />

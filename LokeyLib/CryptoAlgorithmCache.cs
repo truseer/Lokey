@@ -45,6 +45,9 @@ namespace LokeyLib
 
             // Add Pad Generators
             Add(new DotNetDefaultPadDataGenerator());
+            DevRandomPadDataGenerator devRandom = new DevRandomPadDataGenerator();
+            if (devRandom.AvailableOnPlatform)
+                Add(devRandom);
 
             if (autoSearch)
             {

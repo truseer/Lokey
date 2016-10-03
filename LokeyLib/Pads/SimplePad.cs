@@ -70,7 +70,7 @@ namespace LokeyLib
             return newPad;
         }
 
-        public void UnsafeDelete()
+        public override void UnsafeDelete()
         {
             pad.Delete();
             index.UnsafeDelete();
