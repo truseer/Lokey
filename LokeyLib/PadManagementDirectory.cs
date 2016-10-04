@@ -80,7 +80,7 @@ namespace LokeyLib
             if (key != null)
             {
                 encryptedStandalonePads = dir.EnumerateFiles("*" + EncryptedPad.DefaultExt, SearchOption.TopDirectoryOnly)
-                    .Select(fi => EncryptedPad.Load(fi, key));
+                    .Select(fi => EncryptedPad.Load(fi, key, rng));
                 pads = pads.Concat(encryptedStandalonePads);
                 encryptedPadConnections = dir.EnumerateFiles("*" + EncryptedPadConnection.DefaultExt, SearchOption.TopDirectoryOnly)
                     .Select(fi => EncryptedPadConnection.ReadFromFile(fi, key, rng));

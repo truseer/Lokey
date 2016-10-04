@@ -33,8 +33,9 @@ namespace LokeyLib
         private byte[] headerKey;
         private byte[] headerIv;
         private long footerOffset;
+        private IPadDataGenerator rng; 
 
-        private EncryptedPad(FileInfo file, byte[] headerKey, byte[] headerIv, byte[] padKey, byte[] padIv, long footerOffset)
+        private EncryptedPad(FileInfo file, byte[] headerKey, byte[] headerIv, byte[] padKey, byte[] padIv, long footerOffset, IPadDataGenerator rng)
         {
             pad = file;
             this.headerIv = headerIv;
@@ -42,6 +43,7 @@ namespace LokeyLib
             this.padIv = padIv;
             this.padKey = padKey;
             this.footerOffset = footerOffset;
+            this.rng = rng;
             ReadChunkList();
         }
 
@@ -124,10 +126,10 @@ namespace LokeyLib
                     padBytesWritten += bytesToWrite;
                 }
             }
-            return new EncryptedPad(new FileInfo(filePath), key, headerIv, padKey, padIv, footerOffset);
+            return new EncryptedPad(new FileInfo(filePath), key, headerIv, padKey, padIv, footerOffset, rng);
         }
 
-        public static EncryptedPad Load(FileInfo padFile, byte[] key)
+        public static EncryptedPad Load(FileInfo padFile, byte[] key, IPadDataGenerator rng)
         {
             byte[] headerIv;
             long footerOffset;
@@ -160,13 +162,13 @@ namespace LokeyLib
                 padKey = new byte[PadKeyLength];
                 Array.Copy(encryptedHeader, FooterOffsetLength + padIv.Length, padKey, 0, padKey.Length);
             }
-            return new EncryptedPad(padFile, key, headerIv, padKey, padIv, footerOffset);
+            return new EncryptedPad(padFile, key, headerIv, padKey, padIv, footerOffset, rng);
         }
 
         public EncryptedPad CopyTo(string newPadFilePath)
         {
             FileInfo copy = pad.CopyTo(newPadFilePath);
-            return EncryptedPad.Load(copy, headerKey);
+            return EncryptedPad.Load(copy, headerKey, rng);
         }
 
         public EncryptedPad CopyTo(DirectoryInfo newPadDir)
@@ -229,7 +231,7 @@ namespace LokeyLib
             }
             bytes = encryptor.DecryptBytesAtOffset(padKey, padIv, start, bytes, true);
             usedChunks.Add(new PadChunk(start, size));
-            WriteChunkList();
+            WriteHeaderFooter();
             return bytes;
         }
 
@@ -238,19 +240,21 @@ namespace LokeyLib
             pad.Delete();
         }
 
-        private void WriteChunkList()
+        private void WriteHeaderFooter()
         {
+            headerIv = rng.GetPadData(HeaderIvLength);
             SimplifyChunkList();
             using (FileStream fs = pad.Open(FileMode.Open, FileAccess.Write))
             {
+                WriteHeader(fs);
                 fs.Position = footerOffset;
-                ulong padOffset = PadSize;
+                ulong headerOffset = HeaderLength;
                 foreach (PadChunk chunk in usedChunks)
                 {
                     byte[] chunkBytes = chunk.ToBytes();
-                    chunkBytes = encryptor.EncryptBytesAtOffset(padKey, padIv, padOffset, chunkBytes);
+                    chunkBytes = encryptor.EncryptBytesAtOffset(headerKey, headerIv, headerOffset, chunkBytes, true);
                     fs.Write(chunkBytes, 0, chunkBytes.Length);
-                    padOffset += (ulong)chunkBytes.Length;
+                    headerOffset += (ulong)chunkBytes.Length;
                 }
             }
         }
@@ -262,13 +266,13 @@ namespace LokeyLib
             {
                 fs.Position = footerOffset;
                 byte[] padChunkBuf = new byte[PadChunk.BytesSize];
-                ulong chunkPosition = PadSize;
+                ulong chunkPosition = HeaderLength;
                 int bytesRead = fs.Read(padChunkBuf, 0, padChunkBuf.Length);
                 while (bytesRead > 0)
                 {
                     if (bytesRead != PadChunk.BytesSize)
                         throw new InvalidEncryptedFileHeaderException("The footer has an incorrect size.");
-                    padChunkBuf = encryptor.DecryptBytesAtOffset(padKey, padIv, chunkPosition, padChunkBuf, true);
+                    padChunkBuf = encryptor.DecryptBytesAtOffset(headerKey, headerIv, chunkPosition, padChunkBuf, true);
                     usedChunks.Add(PadChunk.FromBytes(padChunkBuf));
                     chunkPosition += (ulong)bytesRead;
                     bytesRead = fs.Read(padChunkBuf, 0, padChunkBuf.Length);
@@ -308,7 +312,7 @@ namespace LokeyLib
                         byte[] key2 = rng.GetPadData(KeyLength);
                         pad2.UpdateEncryption(key2, rng.GetPadData(HeaderIvLength));
                         pad2 = null;
-                        pad2 = EncryptedPad.Load(new FileInfo(secondPad), key2);
+                        pad2 = EncryptedPad.Load(new FileInfo(secondPad), key2, rng);
                         testsSucceeded &= WriteTestResult("Key Update", !UtilityFunctions.ByteArraysEqual(key, key2));
                         testsSucceeded &= WriteTestResult("IV Update", !UtilityFunctions.ByteArraysEqual(pad.headerIv, pad2.headerIv));
                         foreach (ICryptoAlgorithmFactory factory in CryptoAlgorithmCache.Instance.Algorithms)

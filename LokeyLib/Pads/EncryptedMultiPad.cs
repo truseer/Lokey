@@ -29,11 +29,11 @@ namespace LokeyLib
     {
         public const string DefaultExt = ".eidx";
 
-        public EncryptedMultiPad(FileInfo index, byte[] key)
+        public EncryptedMultiPad(FileInfo index, byte[] key, IPadDataGenerator rng)
         {
             multipadIndex = index;
             this.key = key;
-            ReadFromIndex();
+            ReadFromIndex(rng);
         }
 
         public static EncryptedMultiPad Create(DirectoryInfo dir, byte[] key, IPadDataGenerator rng, string name, ulong size, int writeBlockSize = 4096)
@@ -90,7 +90,7 @@ namespace LokeyLib
                 byte[] iv = rng.GetPadData(Aes256Ctr.IvSizeBytes);
                 fs.Write(iv, 0, iv.Length);
             }
-            return new EncryptedMultiPad(new FileInfo(index.FullName), key);
+            return new EncryptedMultiPad(new FileInfo(index.FullName), key, rng);
         }
 
         private void UpdateIndexEncryption(byte[] key, byte[] iv)
@@ -131,7 +131,7 @@ namespace LokeyLib
         {
             if (!dir.Exists)
                 dir.Create();
-            EncryptedMultiPad newMPad = EncryptedMultiPad.Create(new FileInfo(Path.Combine(dir.FullName, multipadIndex.Name)), key, rng);
+            EncryptedMultiPad newMPad = Create(new FileInfo(Path.Combine(dir.FullName, multipadIndex.Name)), key, rng);
             foreach (EncryptedPad subpad in pads)
             {
                 string relativePadPath = GetPathRelativeToIndex(subpad.PadFileInfo.FullName);
@@ -156,7 +156,7 @@ namespace LokeyLib
             WriteToIndex();
         }
 
-        private void ReadFromIndex()
+        private void ReadFromIndex(IPadDataGenerator rng)
         {
             pads.Clear();
             using (FileStream fs = multipadIndex.Open(FileMode.Open, FileAccess.Read))
@@ -180,7 +180,7 @@ namespace LokeyLib
                         {
                             if (!line.Equals(string.Empty))
                             {
-                                pads.Add(EncryptedPad.Load(new FileInfo(Path.GetFullPath(Path.Combine(multipadIndex.Directory.FullName, line))), key));
+                                pads.Add(EncryptedPad.Load(new FileInfo(Path.GetFullPath(Path.Combine(multipadIndex.Directory.FullName, line))), key, rng));
                             }
                             line = sr.ReadLine();
                         }
@@ -201,13 +201,14 @@ namespace LokeyLib
                 fs.Write(iv, 0, iv.Length);
                 using (MemoryStream ms = new MemoryStream())
                 {
-                    using (StreamWriter sw = new StreamWriter(fs, Encoding.UTF8))
+                    using (StreamWriter sw = new StreamWriter(ms, Encoding.UTF8))
                     {
                         foreach (EncryptedPad pad in pads)
                         {
                             sw.WriteLine(GetPathRelativeToIndex(pad.PadFileInfo.FullName));
                         }
                         byte[] buffer = ms.GetBuffer();
+                        buffer = new Aes256Ctr().EncryptBytes(key, iv, buffer, true);
                         fs.Write(buffer, 0, buffer.Length);
                     }
                 }

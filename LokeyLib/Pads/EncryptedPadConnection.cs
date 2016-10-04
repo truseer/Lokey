@@ -89,7 +89,7 @@ namespace LokeyLib
                 fs.Write(iv, 0, iv.Length);
                 using (MemoryStream ms = new MemoryStream())
                 {
-                    using (StreamWriter sw = new StreamWriter(fs, Encoding.UTF8))
+                    using (StreamWriter sw = new StreamWriter(ms, Encoding.UTF8))
                     {
                         sw.WriteLine(GetPathRelativeToIndex(To.IndexFilePath));
                         sw.WriteLine(GetPathRelativeToIndex(From.IndexFilePath));
@@ -121,10 +121,10 @@ namespace LokeyLib
                     {
                         string toPadIndexRelativeFilePath = sr.ReadLine();
                         FileInfo toPadIndexFile = new FileInfo(Path.Combine(connectionFile.Directory.FullName, toPadIndexRelativeFilePath));
-                        EncryptedMultiPad toPad = new EncryptedMultiPad(toPadIndexFile, key);
+                        EncryptedMultiPad toPad = new EncryptedMultiPad(toPadIndexFile, key, rng);
                         string fromPadIndexRelativeFilePath = sr.ReadLine();
                         FileInfo fromPadIndexFile = new FileInfo(Path.Combine(connectionFile.Directory.FullName, fromPadIndexRelativeFilePath));
-                        EncryptedMultiPad fromPad = new EncryptedMultiPad(fromPadIndexFile, key);
+                        EncryptedMultiPad fromPad = new EncryptedMultiPad(fromPadIndexFile, key, rng);
                         return new EncryptedPadConnection(connectionFile, toPad, fromPad, key, iv, rng);
                     }
                 }
