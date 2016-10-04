@@ -44,7 +44,7 @@ namespace LokeyLib
         {
             if (!midxDir.Exists)
                 midxDir.Create();
-            if (!padsDir.Exists)
+            if (!midxDir.FullName.Equals(padsDir.FullName) && !padsDir.Exists)
                 padsDir.Create();
             FileInfo midxFile = new FileInfo(Path.Combine(midxDir.FullName, name + DefaultExt));
             MultiPad mpad = Create(midxFile);

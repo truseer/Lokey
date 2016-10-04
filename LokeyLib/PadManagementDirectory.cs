@@ -1,21 +1,21 @@
-/*********************************************************************/
-//LokeyLib - A library for the management and use of cryptographic pads
-/*********************************************************************/
-//Copyright (C) 2016  Ian Doyle
+//**********************************************************************/
+// LokeyLib - A library for the management and use of cryptographic pads
+//**********************************************************************/
+// Copyright (C) 2016  Ian Doyle
 //
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
-/*********************************************************************/
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//**********************************************************************/
 
 using System;
 using System.Collections.Generic;
@@ -35,8 +35,7 @@ namespace LokeyLib
         private Dictionary<string, AbstractPad> singlePads;
         private Dictionary<string, IPadConnection> connections;
         private byte[] key;
-        private IEnumerable<EncryptedPad> encryptedStandalonePads;
-        private IEnumerable<EncryptedPadConnection> encryptedPadConnections;
+        private IEnumerable<IEncryptionPadObject> encryptedPadsObjects;
 
         public string PadRootPath { get { return dir.FullName; } }
         public IEnumerable<AbstractPad> LonePads { get { return singlePads.Values; } }
@@ -44,19 +43,18 @@ namespace LokeyLib
         public IEnumerable<IPadConnection> Connections { get { return connections.Values; } }
         public IEnumerable<string> ConnectionNames { get { return connections.Keys; } }
 
-        public PadManagementDirectory(DirectoryInfo rootDir, IPadDataGenerator rng, string password)
+        public PadManagementDirectory(DirectoryInfo rootDir, string password, IPadDataGenerator rng = null)
         {
+            if (rng == null)
+                rng = new DotNetDefaultPadDataGenerator();
             Initialize(rootDir, rng, password);
         }
 
-        public PadManagementDirectory(DirectoryInfo rootDir, byte[] key = null)
+        public PadManagementDirectory(DirectoryInfo rootDir, byte[] key = null, IPadDataGenerator rng = null)
         {
-            Initialize(rootDir, new DotNetDefaultPadDataGenerator(), key);
-        }
-
-        public PadManagementDirectory(DirectoryInfo rootDir, string password)
-        {
-            Initialize(rootDir, new DotNetDefaultPadDataGenerator(), password);
+            if (rng == null)
+                rng = new DotNetDefaultPadDataGenerator();
+            Initialize(rootDir, rng, key);
         }
 
         private void Initialize(DirectoryInfo rootDir, IPadDataGenerator rng, string password)
@@ -79,17 +77,19 @@ namespace LokeyLib
                 .Select(connfile => (IPadConnection)PadConnection.ReadFromFile(connfile));
             if (key != null)
             {
-                encryptedStandalonePads = dir.EnumerateFiles("*" + EncryptedPad.DefaultExt, SearchOption.TopDirectoryOnly)
-                    .Select(fi => EncryptedPad.Load(fi, key, rng));
-                pads = pads.Concat(encryptedStandalonePads);
-                encryptedPadConnections = dir.EnumerateFiles("*" + EncryptedPadConnection.DefaultExt, SearchOption.TopDirectoryOnly)
-                    .Select(fi => EncryptedPadConnection.ReadFromFile(fi, key, rng));
+                List<EncryptedPad> encryptedStandalonePads = dir.EnumerateFiles("*" + EncryptedPad.DefaultExt, SearchOption.TopDirectoryOnly)
+                    .Select(fi => EncryptedPad.Load(fi, key, rng)).ToList();
+                List<EncryptedMultiPad> encryptedStandaloneMultiPads = dir.EnumerateFiles("*" + EncryptedMultiPad.DefaultExt, SearchOption.TopDirectoryOnly)
+                    .Select(fi => new EncryptedMultiPad(fi, key, rng)).ToList();
+                pads = pads.Concat(encryptedStandalonePads).Concat(encryptedStandaloneMultiPads);
+                List<EncryptedPadConnection> encryptedPadConnections = dir.EnumerateFiles("*" + EncryptedPadConnection.DefaultExt, SearchOption.TopDirectoryOnly)
+                    .Select(fi => EncryptedPadConnection.ReadFromFile(fi, key, rng)).ToList();
                 padConnections = padConnections.Concat(encryptedPadConnections);
+                encryptedPadsObjects = encryptedStandalonePads.Cast<IEncryptionPadObject>().Concat(encryptedStandaloneMultiPads).Concat(encryptedPadConnections).ToList();
             }
             else
             {
-                encryptedStandalonePads = new List<EncryptedPad>();
-                encryptedPadConnections = new List<EncryptedPadConnection>();
+                encryptedPadsObjects = new List<IEncryptionPadObject>();
             }
             singlePads = pads.ToDictionary(pad => pad.Identifier);
             connections = padConnections.ToDictionary(conn => conn.Name);
@@ -158,12 +158,33 @@ namespace LokeyLib
             return conn;
         }
 
+        public EncryptedPadConnection GenerateEncryptedConnection(string name, IPadDataGenerator rng, ulong size, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
+        {
+            return GenerateEncryptedConnection(name, rng, size, size, writeBlockSize);
+        }
+
+        public EncryptedPadConnection GenerateEncryptedConnection(string name, IPadDataGenerator rng, ulong toSize, ulong fromSize, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
+        {
+            EncryptedPadConnection conn = EncryptedPadConnection.Generate(dir, name, key, rng, toSize, fromSize, writeBlockSize);
+            connections.Add(conn.Name, conn);
+            return conn;
+        }
+
         public SimplePad GenerateSimplePad(string name, IPadDataGenerator rng, ulong size, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
         {
             SimplePad pad = SimplePad.Create(
                 new FileInfo(Path.Combine(dir.FullName, name + SimplePad.DefaultExt)),
                 new FileInfo(Path.Combine(dir.FullName, name + SimplePadIndex.DefaultExt)),
                 rng, size, writeBlockSize);
+            singlePads.Add(pad.Identifier, pad);
+            return pad;
+        }
+
+        public EncryptedPad GenerateEncryptedPad(string name, IPadDataGenerator rng, ulong size, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
+        {
+            if (key == null)
+                throw new CouldNotCreatePadException("Key is null, cannot create encrypted pad.");
+            EncryptedPad pad = EncryptedPad.Create(Path.Combine(dir.FullName, name + EncryptedPad.DefaultExt), key, rng, size, writeBlockSize);
             singlePads.Add(pad.Identifier, pad);
             return pad;
         }
@@ -175,11 +196,27 @@ namespace LokeyLib
             return pad;
         }
 
+        public EncryptedMultiPad GenerateEncryptedMultiPad(string name, IPadDataGenerator rng, ulong size, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
+        {
+            if (key == null)
+                throw new CouldNotCreatePadException("Key is null, cannot create encrypted pad.");
+            EncryptedMultiPad pad = EncryptedMultiPad.Create(dir, new DirectoryInfo(Path.Combine(dir.FullName, name)), key, rng, name, size, writeBlockSize);
+            singlePads.Add(pad.Identifier, pad);
+            return pad;
+        }
+
         public AbstractPad GenerateLonePad(string name, IPadDataGenerator rng, ulong size, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
         {
             return (size > int.MaxValue)
                 ? (AbstractPad)GenerateMultiPad(name, rng, size, writeBlockSize)
                 : (AbstractPad)GenerateSimplePad(name, rng, size, writeBlockSize);
+        }
+
+        public AbstractPad GenerateEncryptedLonePad(string name, IPadDataGenerator rng, ulong size, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
+        {
+            return (size > int.MaxValue)
+                ? (AbstractPad)GenerateEncryptedMultiPad(name, rng, size, writeBlockSize)
+                : (AbstractPad)GenerateEncryptedPad(name, rng, size, writeBlockSize);
         }
 
         public void UpdateEncryption(string password, IPadDataGenerator rng, bool updateIVs = true, bool forceUpdateSalt = false)
@@ -194,19 +231,15 @@ namespace LokeyLib
         public void UpdateEncryption(byte[] key)
         {
             this.key = key;
-            foreach (EncryptedPad epad in encryptedStandalonePads)
-                UpdateEncryption(key);
-            foreach (EncryptedPadConnection econn in encryptedPadConnections)
-                UpdateEncryption(key);
+            foreach (IEncryptionPadObject eo in encryptedPadsObjects)
+                eo.UpdateEncryption(key);
         }
 
         public void UpdateEncryption(byte[] key, IPadDataGenerator rng)
         {
             this.key = key;
-            foreach (EncryptedPad epad in encryptedStandalonePads)
-                UpdateEncryption(key, rng);
-            foreach (EncryptedPadConnection econn in encryptedPadConnections)
-                UpdateEncryption(key, rng);
+            foreach (IEncryptionPadObject eo in encryptedPadsObjects)
+                eo.UpdateEncryption(key, rng);
         }
     }
 }

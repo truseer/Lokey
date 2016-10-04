@@ -17,7 +17,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /***********************************************************************/
 
-
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,11 +30,11 @@ namespace LokeyLib
         {
             get
             {
-				List<DriveInfo> drives = DriveInfo.GetDrives ().ToList();
-				return drives.Where (drive => drive.DriveType == DriveType.Removable
-					|| (drive.DriveType == DriveType.Fixed
-						&& (drive.RootDirectory.FullName.StartsWith("/media/")
-							|| drive.RootDirectory.FullName.StartsWith("/mnt/"))));
+                List<DriveInfo> drives = DriveInfo.GetDrives().ToList();
+                return drives.Where(drive => drive.DriveType == DriveType.Removable
+                   || (drive.DriveType == DriveType.Fixed
+                       && (drive.RootDirectory.FullName.StartsWith("/media/")
+                           || drive.RootDirectory.FullName.StartsWith("/mnt/"))));
             }
         }
 
@@ -43,25 +42,32 @@ namespace LokeyLib
         public DirectoryInfo Dir { get; }
         public PadManagementDirectory Manager { get; }
 
-        public CryptoStick(DriveInfo drive)
+        public CryptoStick(DriveInfo drive, byte[] key = null, IPadDataGenerator rng = null, string subpath = null)
         {
             this.drive = drive;
-            Dir = drive.RootDirectory;
-            Manager = new PadManagementDirectory(Dir);
+            Dir = string.IsNullOrWhiteSpace(subpath) ? drive.RootDirectory : new DirectoryInfo(Path.Combine(drive.RootDirectory.FullName, subpath));
+            Manager = new PadManagementDirectory(Dir, key, rng);
         }
 
-        public CryptoStick(DriveInfo drive, string subpath)
+        public CryptoStick(DriveInfo drive, string password, IPadDataGenerator rng = null, string subpath = null)
         {
             this.drive = drive;
-            Dir = new DirectoryInfo(Path.Combine(drive.RootDirectory.FullName, subpath));
-            Manager = new PadManagementDirectory(Dir);
+            Dir = string.IsNullOrWhiteSpace(subpath) ? drive.RootDirectory : new DirectoryInfo(Path.Combine(drive.RootDirectory.FullName, subpath));
+            Manager = new PadManagementDirectory(Dir, password, rng);
         }
 
-        public CryptoStick(DirectoryInfo padManagementDir)
+        public CryptoStick(DirectoryInfo padManagementDir, string password, IPadDataGenerator rng = null)
         {
             Dir = padManagementDir;
             drive = new DriveInfo(padManagementDir.Root.FullName.Substring(0, 1));
-            Manager = new PadManagementDirectory(Dir);
+            Manager = new PadManagementDirectory(Dir, password, rng);
+        }
+
+        public CryptoStick(DirectoryInfo padManagementDir, byte[] key = null, IPadDataGenerator rng = null)
+        {
+            Dir = padManagementDir;
+            drive = new DriveInfo(padManagementDir.Root.FullName.Substring(0, 1));
+            Manager = new PadManagementDirectory(Dir, key, rng);
         }
 
         public bool IsReady { get { return drive.IsReady; } }
@@ -73,11 +79,25 @@ namespace LokeyLib
             return Manager.GenerateConnection(connectionName, rng, padSize);
         }
 
+        public EncryptedPadConnection GenerateMaximumEncryptedConnection(string connectionName, IPadDataGenerator rng)
+        {
+            long freeSpace = drive.AvailableFreeSpace;
+            ulong padSize = ((ulong)freeSpace - (1UL << 22)) / 2UL;
+            return Manager.GenerateEncryptedConnection(connectionName, rng, padSize);
+        }
+
         public AbstractPad GenerateMaximumPad(string padName, IPadDataGenerator rng)
         {
             long freeSpace = drive.AvailableFreeSpace;
             ulong padSize = ((ulong)freeSpace - (1UL << 23)) / 2UL;
             return Manager.GenerateLonePad(padName, rng, padSize);
+        }
+
+        public AbstractPad GenerateMaximumEncryptedPad(string padName, IPadDataGenerator rng)
+        {
+            long freeSpace = drive.AvailableFreeSpace;
+            ulong padSize = ((ulong)freeSpace - (1UL << 23)) / 2UL;
+            return Manager.GenerateEncryptedLonePad(padName, rng, padSize);
         }
 
 #if DEBUG
@@ -150,7 +170,7 @@ namespace LokeyLib
                 }
                 finally { ptTest.Delete(); }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 UtilityFunctions.WriteTestExceptionFailure(ClassName, e);
                 return false;
@@ -166,5 +186,5 @@ namespace LokeyLib
             return UtilityFunctions.WriteTestResult(ClassName, testName, success);
         }
 #endif
-            }
+    }
 }
