@@ -402,7 +402,7 @@ namespace LokeyLib
             {
                 if (pad != null)
                 {
-                    try { pad.UnsafeDelete(); }
+                    try { pad.NonsecureDelete(); }
                     catch (Exception e) { UtilityFunctions.WriteTestExceptionFailure(ClassName, e); }
                 }
                 UtilityFunctions.WriteTestsHeaderFooter(ClassName, false);

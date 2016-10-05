@@ -70,12 +70,6 @@ namespace LokeyLib
             return newPad;
         }
 
-        public override void UnsafeDelete()
-        {
-            pad.Delete();
-            index.UnsafeDelete();
-        }
-
         public SimplePad CopyTo(DirectoryInfo dir)
         {
             return CopyTo(dir, dir);
@@ -92,7 +86,7 @@ namespace LokeyLib
             }
             catch
             {
-                newIdx.UnsafeDelete();
+                newIdx.NonsecureDelete();
                 throw;
             }
         }
@@ -297,7 +291,7 @@ namespace LokeyLib
             {
                 if(pad != null)
                 {
-                    try { pad.UnsafeDelete(); }
+                    try { pad.NonsecureDelete(); }
                     catch (Exception e) { UtilityFunctions.WriteTestExceptionFailure(ClassName, e); }
                 }
                 UtilityFunctions.WriteTestsHeaderFooter(ClassName, false);

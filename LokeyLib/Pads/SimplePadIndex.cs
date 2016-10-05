@@ -62,12 +62,6 @@ namespace LokeyLib
 
         public IEnumerable<FileInfo> ComponentFiles { get { return new FileInfo[] { index }; } }
 
-        public void UnsafeDelete()
-        {
-            index.Delete();
-            usedChunks = null;
-        }
-
         public IEnumerable<PadChunk> GenerateUnusedChunks(UInt64 padSize)
         {
             return usedChunks.Complement(padSize);

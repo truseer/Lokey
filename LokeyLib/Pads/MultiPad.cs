@@ -69,7 +69,7 @@ namespace LokeyLib
                     SimplePad simplePad = SimplePad.Create(spadFile, sidxFile, rng, simplePadSizeToWrite, writeBlockSize);
                     if (simplePad == null)
                     {
-                        mpad.UnsafeDelete();
+                        mpad.NonsecureDelete();
                         throw new CouldNotCreatePadException(
                             "SimplePad.Create(\"" + spadFile.FullName + "\", \""
                             + sidxFile.FullName + "\", "
@@ -90,15 +90,6 @@ namespace LokeyLib
             if (index.Exists) return null;
             using (FileStream fs = index.Create()) { }
             return new MultiPad(new FileInfo(index.FullName));
-        }
-
-        public override void UnsafeDelete()
-        {
-            foreach(SimplePad subpad in pads)
-            {
-                subpad.UnsafeDelete();
-            }
-            multipadIndex.Delete();
         }
 
         public MultiPad CopyTo(DirectoryInfo dir)
@@ -327,7 +318,7 @@ namespace LokeyLib
             {
                 if (pad != null)
                 {
-                    try { pad.UnsafeDelete(); }
+                    try { pad.NonsecureDelete(); }
                     catch (Exception e) { UtilityFunctions.WriteTestExceptionFailure(ClassName, e); }
                 }
                 UtilityFunctions.WriteTestsHeaderFooter(ClassName, false);

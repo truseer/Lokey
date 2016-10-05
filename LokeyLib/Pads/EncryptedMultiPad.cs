@@ -67,7 +67,7 @@ namespace LokeyLib
                     EncryptedPad simplePad = EncryptedPad.Create(spadFile, key, rng, simplePadSizeToWrite, writeBlockSize);
                     if (simplePad == null)
                     {
-                        mpad.UnsafeDelete();
+                        mpad.NonsecureDelete();
                         throw new CouldNotCreatePadException(
                             "EncryptedPad.Create(\"" + spadFile + "\", \""
                             + rng.ToString() + ", "
@@ -116,15 +116,6 @@ namespace LokeyLib
             {
                 subpad.UpdateEncryption(key, rng);
             }
-        }
-
-        public override void UnsafeDelete()
-        {
-            foreach (EncryptedPad subpad in pads)
-            {
-                subpad.UnsafeDelete();
-            }
-            multipadIndex.Delete();
         }
 
         public EncryptedMultiPad CopyTo(DirectoryInfo dir, IPadDataGenerator rng)
@@ -357,7 +348,7 @@ namespace LokeyLib
             {
                 if (pad != null)
                 {
-                    try { pad.UnsafeDelete(); }
+                    try { pad.NonsecureDelete(); }
                     catch (Exception e) { UtilityFunctions.WriteTestExceptionFailure(ClassName, e); }
                 }
                 UtilityFunctions.WriteTestsHeaderFooter(ClassName, false);

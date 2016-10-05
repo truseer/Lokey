@@ -154,13 +154,6 @@ namespace LokeyLib
             return new EncryptedPadConnection(newConn, newTo, newFrom, key, iv, rng);
         }
 
-        public void UnsafeDelete()
-        {
-            From.UnsafeDelete();
-            To.UnsafeDelete();
-            connectionFile.Delete();
-        }
-
         public void UpdateEncryption(byte[] key)
         {
             UpdateIndexEncryption(key);

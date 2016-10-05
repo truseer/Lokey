@@ -129,8 +129,6 @@ namespace LokeyLib
 
         public abstract UInt64 PadSize { get; }
 
-        public abstract void UnsafeDelete();
-
         // These should mark the chunk grabbed as used
         public abstract byte[] GetPadBytes(UInt64 start, UInt64 size);
 

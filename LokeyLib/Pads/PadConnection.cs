@@ -128,13 +128,6 @@ namespace LokeyLib
             return new PadConnection(newConn, newTo, newFrom);
         }
 
-        public void UnsafeDelete()
-        {
-            From.UnsafeDelete();
-            To.UnsafeDelete();
-            connectionFile.Delete();
-        }
-
         private string GetPathRelativeToIndex(string path)
         {
             return UtilityFunctions.GetRelativePath(connectionFile.FullName, path);

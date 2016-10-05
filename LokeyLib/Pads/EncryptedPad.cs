@@ -237,11 +237,6 @@ namespace LokeyLib
             return bytes;
         }
 
-        public override void UnsafeDelete()
-        {
-            pad.Delete();
-        }
-
         private void WriteHeaderFooter()
         {
             headerIv = rng.GetPadData(HeaderIvLength);
@@ -358,7 +353,7 @@ namespace LokeyLib
                     }
                     finally
                     {
-                        pad2.UnsafeDelete();
+                        pad2.NonsecureDelete();
                     }
                 testsSucceeded &= WriteTestResult("Template", true);
                     return testsSucceeded;
@@ -377,7 +372,7 @@ namespace LokeyLib
             {
                 if (pad != null)
                 {
-                    try { pad.UnsafeDelete(); }
+                    try { pad.NonsecureDelete(); }
                     catch (Exception e) { UtilityFunctions.WriteTestExceptionFailure(ClassName, e); }
                 }
                 UtilityFunctions.WriteTestsHeaderFooter(ClassName, false);
