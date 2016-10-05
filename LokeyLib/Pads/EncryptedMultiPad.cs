@@ -234,7 +234,7 @@ namespace LokeyLib
 
         public override IEnumerable<FileInfo> ComponentFiles
         {
-            get { return pads.SelectMany(pad => ComponentFiles).Concat(new FileInfo[] { multipadIndex }); }
+            get { return pads.SelectMany(pad => pad.ComponentFiles).Concat(new FileInfo[] { multipadIndex }); }
         }
 
         private Tuple<int, UInt64> GetPadIndexAndPadStartOffsetAtMultipadByteOffset(UInt64 targetOffset)

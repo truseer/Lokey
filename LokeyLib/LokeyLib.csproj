@@ -50,6 +50,7 @@
     <Compile Include="CircularBuffer.cs" />
     <Compile Include="FileComponentListable.cs" />
     <Compile Include="IFileComponentListable.cs" />
+    <Compile Include="NamePackedFile.cs" />
     <Compile Include="Pads\EncryptedPadConnection.cs" />
     <Compile Include="Pads\IEncryptionPadObject.cs" />
     <Compile Include="Pads\IPadConnection.cs" />
