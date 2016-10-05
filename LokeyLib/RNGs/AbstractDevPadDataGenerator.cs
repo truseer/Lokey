@@ -34,13 +34,19 @@ namespace LokeyLib
 
         public byte[] GetPadData(ulong numBytes)
         {
+            byte[] bytes = new byte[numBytes];
+            GetPadData(bytes);
+            return bytes;
+        }
+
+        public void GetPadData(byte[] bytes)
+        {
             using (FileStream fs = File.Open(SourceFilePath, FileMode.Open, FileAccess.Read))
             {
-                byte[] data = new byte[numBytes];
                 ulong bytesRead = 0UL;
                 do
                 {
-                    ulong bytesLeftToRead = numBytes - bytesRead;
+                    ulong bytesLeftToRead = (ulong)bytes.LongLength - bytesRead;
                     int bytesToRead = bytesLeftToRead < int.MaxValue ? (int)bytesLeftToRead : int.MaxValue;
                     byte[] bytesThisPass = new byte[bytesToRead];
                     int bytesReadThisPass = 0;
@@ -52,9 +58,8 @@ namespace LokeyLib
                         bytesReadThisPass += bytesReadThisTry;
                     } while (bytesReadThisPass < bytesThisPass.Length);
                     bytesRead += (ulong)bytesReadThisPass;
-                    Array.Copy(bytesThisPass, 0L, data, (long)bytesRead, bytesThisPass.LongLength);
-                } while (bytesRead < numBytes);
-                return data;
+                    Array.Copy(bytesThisPass, 0L, bytes, (long)bytesRead, bytesThisPass.LongLength);
+                } while (bytesRead < (ulong)bytes.LongLength);
             }
         }
     }

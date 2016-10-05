@@ -21,7 +21,7 @@ using System.IO;
 
 namespace LokeyLib
 {
-    public interface IPadConnection
+    public interface IPadConnection : IFileComponentListable
     {
         AbstractPad From { get; }
 

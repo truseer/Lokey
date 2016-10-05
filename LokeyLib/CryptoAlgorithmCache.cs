@@ -1,31 +1,29 @@
-/*********************************************************************/
-//LokeyLib - A library for the management and use of cryptographic pads
-/*********************************************************************/
-//Copyright (C) 2016  Ian Doyle
+//***********************************************************************/
+// LokeyLib - A library for the management and use of cryptographic pads
+//***********************************************************************/
+// Copyright (C) 2016  Ian Doyle
 //
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//GNU General Public License for more details.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
-/*********************************************************************/
-
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//***********************************************************************/
 
 ﻿#define USE_RANDOM_BUFFER_TEST
+
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LokeyLib
 {
@@ -37,7 +35,7 @@ namespace LokeyLib
         public CryptoAlgorithmCache(bool autoSearch = false)
         {
             // Add Encryption Algorithms
-            Add(new NoEncryptionAlgorithmFactory());
+            // Add(new NoEncryptionAlgorithmFactory());
             Add(new OneTimePadAlgorithmFactory());
             Add(new Aes256CbcPadIvAlgorithmFactory());
             Add(new Aes256EcbPadIvAlgorithmFactory());
@@ -86,10 +84,15 @@ namespace LokeyLib
                     }
                 }
             }
+            DefaultRNG = GetRNG(1);
+            DefaultCryptoAlgorithm = GetAlgorithm(2);
         }
 
         private Dictionary<UInt32, ICryptoAlgorithmFactory> algorithms = new Dictionary<uint, ICryptoAlgorithmFactory>();
         private Dictionary<UInt32, IPadDataGenerator> rngs = new Dictionary<uint, IPadDataGenerator>();
+
+        public IPadDataGenerator DefaultRNG { get; private set; }
+        public ICryptoAlgorithmFactory DefaultCryptoAlgorithm { get; private set; }
 
         public void Add(ICryptoAlgorithmFactory algorithm)
         {
@@ -103,6 +106,11 @@ namespace LokeyLib
             return algorithms[uid];
         }
 
+        public void SetDefaultCryptoAlgorithm(UInt32 uid)
+        {
+            DefaultCryptoAlgorithm = GetAlgorithm(uid);
+        }
+
         public void Add(IPadDataGenerator rng)
         {
             rngs.Add(rng.UID, rng);
@@ -113,6 +121,11 @@ namespace LokeyLib
         public IPadDataGenerator GetRNG(UInt32 uid)
         {
             return rngs[uid];
+        }
+
+        public void SetDefaultRNG(UInt32 uid)
+        {
+            DefaultRNG = GetRNG(uid);
         }
 
 
@@ -165,7 +178,7 @@ namespace LokeyLib
                         int fillVal = 0;
 #endif
                         byte[][] ptChunks = new byte[numChunks + 1][];
-                        for(int i = 0; i < numChunks; ++i)
+                        for (int i = 0; i < numChunks; ++i)
                         {
                             ptChunks[i] = new byte[chunkBlocks * alg.BlockSize];
 #if USE_RANDOM_BUFFER_TEST
@@ -191,7 +204,7 @@ namespace LokeyLib
                         testsSucceeded &= UtilityFunctions.WriteTestResult(f.Name, "Encryption Iterator",
                             (f.UID != 0) ^ UtilityFunctions.ByteArraysEqual(ptBlock, ctChunkBlock));
                         byte[] ctBlock = alg.Encrypt(pad, keyChunk, ptBlock);
-                        testsSucceeded &= UtilityFunctions.WriteTestResult(f.Name, "Encryption Iterator Equivalence", 
+                        testsSucceeded &= UtilityFunctions.WriteTestResult(f.Name, "Encryption Iterator Equivalence",
                             UtilityFunctions.ByteArraysEqual(ctBlock, ctChunkBlock));
                         byte[][] ptOutChunks = alg.Decrypt(pad, keyChunk, ctChunks).ToArray();
                         byte[] ptOutChunksBlock = ptOutChunks.SelectMany(a => a).ToArray();
@@ -212,14 +225,14 @@ namespace LokeyLib
             }
             finally
             {
-                if(pad != null)
+                if (pad != null)
                 {
                     try { pad.UnsafeDelete(); }
-                    catch(Exception e) { UtilityFunctions.WriteTestExceptionFailure(ClassName, e); }
+                    catch (Exception e) { UtilityFunctions.WriteTestExceptionFailure(ClassName, e); }
                 }
                 UtilityFunctions.WriteTestsHeaderFooter(ClassName, false);
             }
         }
 #endif
-                    }
+    }
 }

@@ -120,6 +120,7 @@ namespace LokeyLib
         public override string Identifier { get { return multipadIndex.FullName; } }
 
         private List<SimplePad> pads = new List<SimplePad>();
+
         private FileInfo multipadIndex;
 
         public string IndexFilePath { get { return multipadIndex.FullName; } }
@@ -208,6 +209,14 @@ namespace LokeyLib
                         chunk => new PadChunk(chunk.Start + tup.Item2, chunk.Size)
                     )
                 ).Simplify();
+            }
+        }
+
+        public override IEnumerable<FileInfo> ComponentFiles
+        {
+            get
+            {
+                return pads.SelectMany(pad => pad.ComponentFiles).Concat(new FileInfo[] { multipadIndex });
             }
         }
 

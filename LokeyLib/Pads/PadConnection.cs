@@ -18,9 +18,10 @@
 /*********************************************************************/
 
 
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace LokeyLib
@@ -37,6 +38,11 @@ namespace LokeyLib
         public MultiPad To { get; private set; }
         AbstractPad IPadConnection.To { get { return To; } }
         public string ConnectionFilePath {  get { return connectionFile.FullName; } }
+
+        public IEnumerable<FileInfo> ComponentFiles
+        {
+            get { return From.ComponentFiles.Concat(To.ComponentFiles); }
+        }
 
         public static PadConnection Generate(DirectoryInfo rootDir, string name, IPadDataGenerator rng, ulong padSize)
         {

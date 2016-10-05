@@ -26,63 +26,74 @@ using System.Text;
 
 namespace LokeyLib
 {
-    public class PadManagementDirectory : IEncryptionPadObject
+    public class PadManagementDirectory : IEncryptionPadObject, IFileComponentListable
     {
         private const string SaltFileName = ".salt";
         private const int SaltSize = 64;
 
-        private DirectoryInfo dir;
         private Dictionary<string, AbstractPad> singlePads;
         private Dictionary<string, IPadConnection> connections;
         private byte[] key;
         private IEnumerable<IEncryptionPadObject> encryptedPadsObjects;
 
-        public string PadRootPath { get { return dir.FullName; } }
+        public DirectoryInfo Dir { get; private set; }
+        public string PadRootPath { get { return Dir.FullName; } }
         public IEnumerable<AbstractPad> LonePads { get { return singlePads.Values; } }
         public IEnumerable<string> LonePadIDs { get { return singlePads.Keys; } }
         public IEnumerable<IPadConnection> Connections { get { return connections.Values; } }
         public IEnumerable<string> ConnectionNames { get { return connections.Keys; } }
+        public string SaltFilePath { get { return Path.Combine(Dir.FullName, SaltFileName); } }
+
+        public IEnumerable<FileInfo> ComponentFiles
+        {
+            get
+            {
+                return LonePads.SelectMany(pad => pad.ComponentFiles)
+                    .Concat(Connections.SelectMany(conn => conn.ComponentFiles))
+                    .Concat(new FileInfo[] { new FileInfo(SaltFilePath) });
+            }
+        }
 
         public PadManagementDirectory(DirectoryInfo rootDir, string password, IPadDataGenerator rng = null)
         {
             if (rng == null)
-                rng = new DotNetDefaultPadDataGenerator();
+                rng = CryptoAlgorithmCache.Instance.DefaultRNG;
             Initialize(rootDir, rng, password);
         }
 
         public PadManagementDirectory(DirectoryInfo rootDir, byte[] key = null, IPadDataGenerator rng = null)
         {
             if (rng == null)
-                rng = new DotNetDefaultPadDataGenerator();
+                rng = CryptoAlgorithmCache.Instance.DefaultRNG;
             Initialize(rootDir, rng, key);
         }
 
         private void Initialize(DirectoryInfo rootDir, IPadDataGenerator rng, string password)
         {
-            dir = rootDir;
+            Dir = rootDir;
             Initialize(rootDir, rng, GetKeyFromPassword(password, rng));
         }
 
         private void Initialize(DirectoryInfo rootDir, IPadDataGenerator rng, byte[] key)
         {
             this.key = key;
-            dir = rootDir;
-            IEnumerable<AbstractPad> pads = dir.EnumerateFiles("*" + MultiPad.DefaultExt, SearchOption.TopDirectoryOnly)
+            Dir = rootDir;
+            IEnumerable<AbstractPad> pads = Dir.EnumerateFiles("*" + MultiPad.DefaultExt, SearchOption.TopDirectoryOnly)
                 .Select(fi => (AbstractPad) new MultiPad(fi))
-                .Concat(dir.EnumerateFiles("*" + SimplePadIndex.DefaultExt, SearchOption.TopDirectoryOnly)
+                .Concat(Dir.EnumerateFiles("*" + SimplePadIndex.DefaultExt, SearchOption.TopDirectoryOnly)
                     .Select(fi => Tuple.Create(fi, new FileInfo(Path.ChangeExtension(fi.FullName, SimplePad.DefaultExt))))
                     .Where(simplePadPair => simplePadPair.Item2.Exists)
                     .Select(simplePadPair => new SimplePad(simplePadPair.Item2, simplePadPair.Item1)));
-            IEnumerable <IPadConnection> padConnections = dir.EnumerateFiles("*" + PadConnection.DefaultExt, SearchOption.TopDirectoryOnly)
+            IEnumerable <IPadConnection> padConnections = Dir.EnumerateFiles("*" + PadConnection.DefaultExt, SearchOption.TopDirectoryOnly)
                 .Select(connfile => (IPadConnection)PadConnection.ReadFromFile(connfile));
             if (key != null)
             {
-                List<EncryptedPad> encryptedStandalonePads = dir.EnumerateFiles("*" + EncryptedPad.DefaultExt, SearchOption.TopDirectoryOnly)
+                List<EncryptedPad> encryptedStandalonePads = Dir.EnumerateFiles("*" + EncryptedPad.DefaultExt, SearchOption.TopDirectoryOnly)
                     .Select(fi => EncryptedPad.Load(fi, key, rng)).ToList();
-                List<EncryptedMultiPad> encryptedStandaloneMultiPads = dir.EnumerateFiles("*" + EncryptedMultiPad.DefaultExt, SearchOption.TopDirectoryOnly)
+                List<EncryptedMultiPad> encryptedStandaloneMultiPads = Dir.EnumerateFiles("*" + EncryptedMultiPad.DefaultExt, SearchOption.TopDirectoryOnly)
                     .Select(fi => new EncryptedMultiPad(fi, key, rng)).ToList();
                 pads = pads.Concat(encryptedStandalonePads).Concat(encryptedStandaloneMultiPads);
-                List<EncryptedPadConnection> encryptedPadConnections = dir.EnumerateFiles("*" + EncryptedPadConnection.DefaultExt, SearchOption.TopDirectoryOnly)
+                List<EncryptedPadConnection> encryptedPadConnections = Dir.EnumerateFiles("*" + EncryptedPadConnection.DefaultExt, SearchOption.TopDirectoryOnly)
                     .Select(fi => EncryptedPadConnection.ReadFromFile(fi, key, rng)).ToList();
                 padConnections = padConnections.Concat(encryptedPadConnections);
                 encryptedPadsObjects = encryptedStandalonePads.Cast<IEncryptionPadObject>().Concat(encryptedStandaloneMultiPads).Concat(encryptedPadConnections).ToList();
@@ -105,10 +116,9 @@ namespace LokeyLib
         private byte[] GetSalt(IPadDataGenerator rng, bool forceSaltUpdate = false)
         {
             byte[] salt;
-            string saltFilePath = Path.Combine(dir.FullName, SaltFileName);
-            if(!forceSaltUpdate && File.Exists(saltFilePath))
+            if(!forceSaltUpdate && File.Exists(SaltFilePath))
             {
-                using (FileStream fs = File.Open(saltFilePath, FileMode.Open, FileAccess.Read))
+                using (FileStream fs = File.Open(SaltFilePath, FileMode.Open, FileAccess.Read))
                 {
                     salt = new byte[SaltSize];
                     Array.Clear(salt, 0, salt.Length);
@@ -117,7 +127,7 @@ namespace LokeyLib
             }
             else
             {
-                using (FileStream fs = File.Open(saltFilePath, forceSaltUpdate ? FileMode.Create : FileMode.CreateNew, FileAccess.Write))
+                using (FileStream fs = File.Open(SaltFilePath, forceSaltUpdate ? FileMode.Create : FileMode.CreateNew, FileAccess.Write))
                 {
                     salt = rng.GetPadData(SaltSize);
                     fs.Write(salt, 0, salt.Length);
@@ -153,7 +163,7 @@ namespace LokeyLib
 
         public PadConnection GenerateConnection(string name, IPadDataGenerator rng, ulong toSize, ulong fromSize, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
         {
-            PadConnection conn = PadConnection.Generate(dir, name, rng, toSize, fromSize, writeBlockSize);
+            PadConnection conn = PadConnection.Generate(Dir, name, rng, toSize, fromSize, writeBlockSize);
             connections.Add(conn.Name, conn);
             return conn;
         }
@@ -165,7 +175,7 @@ namespace LokeyLib
 
         public EncryptedPadConnection GenerateEncryptedConnection(string name, IPadDataGenerator rng, ulong toSize, ulong fromSize, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
         {
-            EncryptedPadConnection conn = EncryptedPadConnection.Generate(dir, name, key, rng, toSize, fromSize, writeBlockSize);
+            EncryptedPadConnection conn = EncryptedPadConnection.Generate(Dir, name, key, rng, toSize, fromSize, writeBlockSize);
             connections.Add(conn.Name, conn);
             return conn;
         }
@@ -173,8 +183,8 @@ namespace LokeyLib
         public SimplePad GenerateSimplePad(string name, IPadDataGenerator rng, ulong size, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
         {
             SimplePad pad = SimplePad.Create(
-                new FileInfo(Path.Combine(dir.FullName, name + SimplePad.DefaultExt)),
-                new FileInfo(Path.Combine(dir.FullName, name + SimplePadIndex.DefaultExt)),
+                new FileInfo(Path.Combine(Dir.FullName, name + SimplePad.DefaultExt)),
+                new FileInfo(Path.Combine(Dir.FullName, name + SimplePadIndex.DefaultExt)),
                 rng, size, writeBlockSize);
             singlePads.Add(pad.Identifier, pad);
             return pad;
@@ -184,14 +194,14 @@ namespace LokeyLib
         {
             if (key == null)
                 throw new CouldNotCreatePadException("Key is null, cannot create encrypted pad.");
-            EncryptedPad pad = EncryptedPad.Create(Path.Combine(dir.FullName, name + EncryptedPad.DefaultExt), key, rng, size, writeBlockSize);
+            EncryptedPad pad = EncryptedPad.Create(Path.Combine(Dir.FullName, name + EncryptedPad.DefaultExt), key, rng, size, writeBlockSize);
             singlePads.Add(pad.Identifier, pad);
             return pad;
         }
 
         public MultiPad GenerateMultiPad(string name, IPadDataGenerator rng, ulong size, int writeBlockSize = SimplePad.DefaultWriteBlockSize)
         {
-            MultiPad pad = MultiPad.Create(dir, new DirectoryInfo(Path.Combine(dir.FullName, name)), rng, name, size, writeBlockSize);
+            MultiPad pad = MultiPad.Create(Dir, new DirectoryInfo(Path.Combine(Dir.FullName, name)), rng, name, size, writeBlockSize);
             singlePads.Add(pad.Identifier, pad);
             return pad;
         }
@@ -200,7 +210,7 @@ namespace LokeyLib
         {
             if (key == null)
                 throw new CouldNotCreatePadException("Key is null, cannot create encrypted pad.");
-            EncryptedMultiPad pad = EncryptedMultiPad.Create(dir, new DirectoryInfo(Path.Combine(dir.FullName, name)), key, rng, name, size, writeBlockSize);
+            EncryptedMultiPad pad = EncryptedMultiPad.Create(Dir, new DirectoryInfo(Path.Combine(Dir.FullName, name)), key, rng, name, size, writeBlockSize);
             singlePads.Add(pad.Identifier, pad);
             return pad;
         }

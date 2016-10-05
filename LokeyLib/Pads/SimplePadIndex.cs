@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 
 namespace LokeyLib
 {
-    public class SimplePadIndex
+    public class SimplePadIndex : IFileComponentListable
     {
         public const string DefaultExt = ".sidx";
 
@@ -58,10 +58,9 @@ namespace LokeyLib
             return new SimplePadIndex(index.CopyTo(Path.Combine(dir.FullName, index.Name)));
         }
 
-        public bool IsValid
-        {
-            get { return index.Exists; }
-        }
+        public bool IsValid { get { return index.Exists; } }
+
+        public IEnumerable<FileInfo> ComponentFiles { get { return new FileInfo[] { index }; } }
 
         public void UnsafeDelete()
         {

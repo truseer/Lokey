@@ -127,10 +127,12 @@ namespace LokeyLib
 
         public override IEnumerable<PadChunk> UnusedChunks
         {
-            get
-            {
-                return index.GenerateUnusedChunks(PadSize);
-            }
+            get { return index.GenerateUnusedChunks(PadSize); }
+        }
+
+        public override IEnumerable<FileInfo> ComponentFiles
+        {
+            get { return index.ComponentFiles.Concat(new FileInfo[] { pad }); }
         }
 
         public const int DefaultWriteBlockSize = 2048;

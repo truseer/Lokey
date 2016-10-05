@@ -17,15 +17,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /*********************************************************************/
 
-
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace LokeyLib
 {
-    public abstract class AbstractPad
+    public abstract class AbstractPad : IFileComponentListable
     {
         private class AbstractPadBlockEnumerable : IEnumerable<byte[]>
         {
@@ -137,7 +137,9 @@ namespace LokeyLib
         public byte[] GetPadBytes(PadChunk chunk) { return GetPadBytes(chunk.Start, chunk.Size); }
 
         public abstract IEnumerable<PadChunk> UnusedChunks { get; }
-        
+
+        public abstract IEnumerable<FileInfo> ComponentFiles { get; }
+
         public PadChunk GetFirstUnusedChunk()
         {
             return UnusedChunks.First();

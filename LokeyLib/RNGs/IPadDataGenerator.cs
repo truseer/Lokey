@@ -27,5 +27,6 @@ namespace LokeyLib
         string Name { get; }
         UInt32 UID { get; }
         byte[] GetPadData(UInt64 numBytes);
+        void GetPadData(byte[] bytes);
     }
 }

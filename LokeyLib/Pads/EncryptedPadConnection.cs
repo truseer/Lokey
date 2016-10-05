@@ -17,7 +17,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /***********************************************************************/
 
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace LokeyLib
@@ -38,6 +41,11 @@ namespace LokeyLib
         AbstractPad IPadConnection.To { get { return To; } }
 
         public string ConnectionFilePath { get { return connectionFile.FullName; } }
+
+        public IEnumerable<FileInfo> ComponentFiles
+        {
+            get { return From.ComponentFiles.Concat(To.ComponentFiles); }
+        }
 
         public static EncryptedPadConnection Generate(DirectoryInfo rootDir, string name, byte[] key, IPadDataGenerator rng, ulong padSize)
         {

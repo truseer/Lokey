@@ -208,6 +208,8 @@ namespace LokeyLib
 
         public override IEnumerable<PadChunk> UnusedChunks { get { return usedChunks.Complement(PadSize); } }
 
+        public override IEnumerable<FileInfo> ComponentFiles { get { return new FileInfo[] { pad }; } }
+
         public override byte[] GetPadBytes(ulong start, ulong size)
         {
             if (start + size > PadSize)

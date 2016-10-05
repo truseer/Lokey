@@ -1,6 +1,6 @@
-/***********************************************************************/
+//***********************************************************************/
 // LokeyLib - A library for the management and use of cryptographic pads
-/***********************************************************************/
+//***********************************************************************/
 // Copyright (C) 2016  Ian Doyle
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,16 +15,19 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-/***********************************************************************/
+//***********************************************************************/
 
-﻿using System;
+using System;
 using System.IO;
+using System.Text;
 
 namespace LokeyLib
 {
     public class EncryptedFile
     {
         public const int DefaultEncryptedFileBlockSize = 4096;
+
+        public const string FileNamePackedExt = ".nmls";
 
         public class EncryptedFileHeader
         {
@@ -187,6 +190,7 @@ namespace LokeyLib
             this.pad = pad;
             this.header = header;
             IsEncrypted = isEncrypted;
+            FileNameIsPacked = file.Extension.Equals(FileNamePackedExt);
         }
 
         public static EncryptedFile CreateFromEncryptedFile(FileInfo file, IPadConnection connection)
@@ -228,6 +232,71 @@ namespace LokeyLib
         private AbstractPad pad;
 
         public bool IsEncrypted { get; private set; }
+        public bool FileNameIsPacked { get; private set; }
+        public string FilePath {  get { return file.FullName; } }
+        
+        /************************************************
+        | Footer appended to the encrypted file.        |
+        *************************************************
+        | Description                    | Size (Bytes) |
+        *************************************************
+        | File Name String               | N            |
+        | File Name Start Location       | 8            |
+        ************************************************/
+
+        public void PackFileName()
+        {
+            if(!FileNameIsPacked)
+            {
+                using (FileStream fs = file.Open(FileMode.Append, FileAccess.Write))
+                {
+                    long position = fs.Position;
+                    byte[] fileNameBytes = Encoding.UTF8.GetBytes(file.Name);
+                    byte[] positonBytes = BitConverter.GetBytes(position);
+                    fs.Write(fileNameBytes, 0, fileNameBytes.Length);
+                    fs.Write(positonBytes, 0, positonBytes.Length);
+                }
+                FileInfo fi = new FileInfo(file.FullName);
+                string newPath = Path.Combine(fi.DirectoryName, Path.GetRandomFileName().Replace(".", "") + FileNamePackedExt);
+                fi.MoveTo(newPath);
+                file = new FileInfo(newPath);
+            }
+        }
+
+        public void UnpackFileName()
+        {
+            if(FileNameIsPacked)
+            {
+                string fileName = null;
+                using (FileStream fs = file.Open(FileMode.Open, FileAccess.ReadWrite))
+                {
+                    byte[] stringPositionBytes = new byte[sizeof(long)];
+                    fs.Seek(-sizeof(long), SeekOrigin.End);
+                    int bytesRead = fs.Read(stringPositionBytes, 0, stringPositionBytes.Length);
+                    if(bytesRead == stringPositionBytes.Length)
+                    {
+                        long stringPosition = BitConverter.ToInt64(stringPositionBytes, 0);
+                        fs.Position = stringPosition;
+                        long stringBufferLength = (fs.Length - stringPosition) - sizeof(long);
+                        byte[] stringBuffer = new byte[stringBufferLength];
+                        int fileNameBytesRead = fs.Read(stringBuffer, 0, stringBuffer.Length);
+                        if (fileNameBytesRead == stringBufferLength)
+                        {
+                            fileName = Encoding.UTF8.GetString(stringBuffer);
+                            fs.SetLength(stringPosition);
+                        }
+                    }
+                }
+                if (fileName != null)
+                {
+                    FileInfo fi = new FileInfo(file.FullName);
+                    string newPath = Path.Combine(file.DirectoryName, fileName);
+                    fi.MoveTo(newPath);
+                    file = new FileInfo(newPath);
+                    FileNameIsPacked = false;
+                }
+            }
+        }
 
         public void Decrypt(int blockSize = DefaultEncryptedFileBlockSize)
         {
@@ -249,6 +318,7 @@ namespace LokeyLib
                     fs.SetLength(position);
                 }
                 IsEncrypted = false;
+                UnpackFileName();
             }
         }
 
@@ -256,6 +326,7 @@ namespace LokeyLib
         {
             if (!IsEncrypted)
             {
+                PackFileName();
                 // block size must be larger than the header in order to ensure that
                 // none of the file is lost when the header is written
                 if (blockSize < header.BytesSize)
