@@ -78,6 +78,30 @@ namespace LokeyLib
             }
             return true;
         }
+
+        public static IEnumerable<byte> EndianSwapRange(this IEnumerable<byte> bytes, int start, int length)
+        {
+            IEnumerable<byte> range = bytes.Skip(start).Take(length);
+            return BitConverter.IsLittleEndian ? range.Reverse() : range;
+        }
+
+        public static IEnumerable<byte> EndianSwap(this IEnumerable<byte> bytes)
+        {
+            return BitConverter.IsLittleEndian ? bytes.Reverse() : bytes;
+        }
+
+        public static void EndianSwapRange(byte[] array, int start, int length)
+        {
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(array, start, length);
+        }
+
+        public static void EndianSwap(byte[] array)
+        {
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(array);
+        }
+
 #if DEBUG
         internal static bool WriteTestResult(string className, string testName, bool success)
         {

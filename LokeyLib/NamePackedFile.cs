@@ -60,6 +60,7 @@ namespace LokeyLib
                     long position = fs.Position;
                     byte[] fileNameBytes = Encoding.UTF8.GetBytes(file.Name);
                     byte[] positonBytes = BitConverter.GetBytes(position);
+                    UtilityFunctions.EndianSwap(positonBytes);
                     fs.Write(fileNameBytes, 0, fileNameBytes.Length);
                     fs.Write(positonBytes, 0, positonBytes.Length);
                 }
@@ -83,6 +84,7 @@ namespace LokeyLib
                     int bytesRead = fs.Read(stringPositionBytes, 0, stringPositionBytes.Length);
                     if (bytesRead == stringPositionBytes.Length)
                     {
+                        UtilityFunctions.EndianSwap(stringPositionBytes);
                         long stringPosition = BitConverter.ToInt64(stringPositionBytes, 0);
                         fs.Position = stringPosition;
                         long stringBufferLength = (fs.Length - stringPosition) - sizeof(long);

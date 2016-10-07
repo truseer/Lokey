@@ -40,6 +40,9 @@ namespace LokeyLib
             Add(new Aes256CbcPadIvAlgorithmFactory());
             Add(new Aes256EcbPadIvAlgorithmFactory());
             Add(new Aes256CtrPadIvAlgorithmFactory());
+            Add(new AesCtrFactory(AesBlockCipher.AesKeyLength._128Bits));
+            Add(new AesCtrFactory(AesBlockCipher.AesKeyLength._192Bits));
+            Add(new AesCtrFactory(AesBlockCipher.AesKeyLength._256Bits));
 
             // Add Pad Generators
             Add(new DotNetDefaultPadDataGenerator());

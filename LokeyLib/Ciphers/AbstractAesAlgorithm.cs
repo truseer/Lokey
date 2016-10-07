@@ -27,18 +27,6 @@ namespace LokeyLib
 {
     public abstract class AbstractAesAlgorithm : ICryptoAlgorithm
     {
-        protected class KeyIVPair
-        {
-            public KeyIVPair(byte[] key, byte[] iv)
-            {
-                Key = key;
-                IV = iv;
-            }
-
-            public byte[] Key { get; }
-            public byte[] IV { get; }
-        }
-
         protected class AesChunkEnumerable : IEnumerable<byte[]>
         {
             protected class AesChunkEnumerator : IEnumerator<byte[]>

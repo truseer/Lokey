@@ -42,7 +42,9 @@ namespace LokeyLib
         public byte[] ToBytes()
         {
             byte[] startBytes = BitConverter.GetBytes(Start);
+            UtilityFunctions.EndianSwap(startBytes);
             byte[] sizeBytes = BitConverter.GetBytes(Size);
+            UtilityFunctions.EndianSwap(sizeBytes);
             byte[] chunkBytes = new byte[startBytes.Length + sizeBytes.Length];
             Array.Copy(startBytes, chunkBytes, startBytes.Length);
             Array.Copy(sizeBytes, 0, chunkBytes, startBytes.Length, sizeBytes.Length);
@@ -51,7 +53,9 @@ namespace LokeyLib
 
         public static PadChunk FromBytes(byte[] bytes, int offset = 0)
         {
+            UtilityFunctions.EndianSwapRange(bytes, offset, sizeof(ulong));
             UInt64 start = BitConverter.ToUInt64(bytes, offset);
+            UtilityFunctions.EndianSwapRange(bytes, sizeof(UInt64) + offset, sizeof(ulong));
             UInt64 size = BitConverter.ToUInt64(bytes, sizeof(UInt64) + offset);
             return new PadChunk(start, size);
         }

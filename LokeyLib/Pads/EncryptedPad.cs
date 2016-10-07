@@ -82,6 +82,7 @@ namespace LokeyLib
         private static byte[] BuildEncryptedHeader(byte[] headerIv, byte[] headerKey, long footerOffset, byte[] padIv, byte[] padKey)
         {
             byte[] footerOffsetBytes = BitConverter.GetBytes(footerOffset);
+            UtilityFunctions.EndianSwap(footerOffsetBytes);
             byte[] encryptedHeaderBytes = new byte[EncryptedHeaderLength];
             Array.Copy(footerOffsetBytes, encryptedHeaderBytes, FooterOffsetLength);
             Array.Copy(padIv, 0, encryptedHeaderBytes, FooterOffsetLength, PadIvLength);
@@ -156,6 +157,7 @@ namespace LokeyLib
                     bytesRead += numBytes;
                 }
                 encryptedHeader = encryptor.DecryptBytes(key, headerIv, encryptedHeader, true);
+                UtilityFunctions.EndianSwapRange(encryptedHeader, 0, sizeof(long));
                 footerOffset = BitConverter.ToInt64(encryptedHeader, 0);
                 padIv = new byte[PadIvLength];
                 Array.Copy(encryptedHeader, FooterOffsetLength, padIv, 0, padIv.Length);

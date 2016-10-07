@@ -19,6 +19,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace LokeyLib
@@ -104,11 +105,14 @@ namespace LokeyLib
                         bytesRead = fs.Read(headerEncryptedBytes, 0, headerEncryptedBytes.Length);
                         if (bytesRead == headerEncryptedBytes.Length)
                         {
+                            UtilityFunctions.EndianSwapRange(headerUnencryptedBytes, 0, sizeof(ulong));
                             UInt64 headerKeyLocation = BitConverter.ToUInt64(headerUnencryptedBytes, 0);
                             PadChunk headerKeyChunk = GenerateHeaderKeyChunk(headerKeyLocation);
                             headerEncryptedBytes = headerEncryptionAlgorithm.Decrypt(pad, headerKeyChunk, headerEncryptedBytes);
+                            UtilityFunctions.EndianSwapRange(headerEncryptedBytes, 0, sizeof(uint));
                             UInt32 uid = BitConverter.ToUInt32(headerEncryptedBytes, 0);
                             PadChunk fileKeyLocation = PadChunk.FromBytes(headerEncryptedBytes, sizeof(UInt32));
+                            UtilityFunctions.EndianSwapRange(headerEncryptedBytes, sizeof(Int32) + PadChunk.BytesSize, sizeof(uint));
                             UInt32 specificHeaderSize = BitConverter.ToUInt32(headerEncryptedBytes, sizeof(Int32) + PadChunk.BytesSize);
                             byte[] algorithmSpecificHeader = new byte[specificHeaderSize];
                             if (specificHeaderSize > 0)
@@ -141,15 +145,18 @@ namespace LokeyLib
                 
                 // Unencrypted elements bytes
                 byte[] elementBytes = BitConverter.GetBytes(HeaderKeyLocation);
+                UtilityFunctions.EndianSwap(elementBytes);
                 Array.Copy(elementBytes, bytes, sizeof(UInt64));
 
                 // Encrypted elements bytes
                 byte[] encryptedBytes = new byte[EncryptedBytesSize];
                 elementBytes = BitConverter.GetBytes(Algorithm.UID);
+                UtilityFunctions.EndianSwap(elementBytes);
                 Array.Copy(elementBytes, encryptedBytes, sizeof(UInt32));
                 elementBytes = FileKeyLocation.ToBytes();
                 Array.Copy(elementBytes, 0, encryptedBytes, sizeof(UInt32), PadChunk.BytesSize);
                 elementBytes = BitConverter.GetBytes(Algorithm.HeaderSize);
+                UtilityFunctions.EndianSwap(elementBytes);
                 Array.Copy(elementBytes, 0, encryptedBytes, sizeof(UInt32) + PadChunk.BytesSize, sizeof(UInt32));
                 // Algorithm-specific header
                 Array.Copy(Algorithm.Header, 0, encryptedBytes, StaticEncryptedBytesSize, Algorithm.HeaderSize);
