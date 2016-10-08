@@ -112,7 +112,7 @@ namespace LokeyLib
                 IEnumerable<DriveInfo> removables = RemovableDrives;
                 DriveInfo stickDrive = removables.First();
                 CryptoStick stick = new CryptoStick(stickDrive);
-                PadConnection connection = stick.GenerateMaximumConnection(Path.GetRandomFileName().Replace(".", ""), CryptoAlgorithmCache.Instance.GetRNG(1));
+				PadConnection connection = stick.GenerateMaximumConnection(Path.GetRandomFileName().Replace(".", ""), CryptoAlgorithmCache.Instance.DefaultRNG);
 
                 DriveInfo secondStickDrive = removables.Skip(1).First();
                 DirectoryInfo secondStickRootDir = secondStickDrive.RootDirectory;

@@ -303,7 +303,7 @@ namespace LokeyLib
             try
             {
                 bool testsSucceeded = true;
-                pad = SimplePad.Create(new FileInfo("test.pad"), new FileInfo("test.idx"), CryptoAlgorithmCache.Instance.GetRNG(1), 1 << 22);
+				pad = SimplePad.Create(new FileInfo("test.pad"), new FileInfo("test.idx"), CryptoAlgorithmCache.Instance.DefaultRNG, 1 << 22);
                 FileInfo ptTest = UtilityFunctions.GenerateTestPlaintextFile("test.bin", 1 << 21);
                 try
                 {

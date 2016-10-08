@@ -228,6 +228,11 @@ namespace LokeyLib
                 ? (AbstractPad)GenerateEncryptedMultiPad(name, rng, size, writeBlockSize)
                 : (AbstractPad)GenerateEncryptedPad(name, rng, size, writeBlockSize);
         }
+        
+        public IPadConnection TwinConnection(string name, DirectoryInfo tgtDir)
+        {
+            return connections[name].Twin(tgtDir);
+        }
 
         public void UpdateEncryption(string password, IPadDataGenerator rng, bool updateIVs = true, bool forceUpdateSalt = false)
         {

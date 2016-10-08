@@ -92,7 +92,9 @@ namespace LokeyLib
         }
 
         private Dictionary<UInt32, ICryptoAlgorithmFactory> algorithms = new Dictionary<uint, ICryptoAlgorithmFactory>();
+        private Dictionary<string, ICryptoAlgorithmFactory> algorithmsByName = new Dictionary<string, ICryptoAlgorithmFactory>();
         private Dictionary<UInt32, IPadDataGenerator> rngs = new Dictionary<uint, IPadDataGenerator>();
+        private Dictionary<string, IPadDataGenerator> rngsByName = new Dictionary<string, IPadDataGenerator>();
 
         public IPadDataGenerator DefaultRNG { get; private set; }
         public ICryptoAlgorithmFactory DefaultCryptoAlgorithm { get; private set; }
@@ -100,6 +102,7 @@ namespace LokeyLib
         public void Add(ICryptoAlgorithmFactory algorithm)
         {
             algorithms.Add(algorithm.UID, algorithm);
+            algorithmsByName.Add(algorithm.Name, algorithm);
         }
 
         public ICollection<ICryptoAlgorithmFactory> Algorithms { get { return algorithms.Values; } }
@@ -109,14 +112,25 @@ namespace LokeyLib
             return algorithms[uid];
         }
 
+        public ICryptoAlgorithmFactory GetAlgorithm(string name)
+        {
+            return algorithmsByName[name];
+        }
+
         public void SetDefaultCryptoAlgorithm(UInt32 uid)
         {
             DefaultCryptoAlgorithm = GetAlgorithm(uid);
         }
 
+        public void SetDefaultCryptoAlgorithm(string name)
+        {
+            DefaultCryptoAlgorithm = GetAlgorithm(name);
+        }
+
         public void Add(IPadDataGenerator rng)
         {
             rngs.Add(rng.UID, rng);
+            rngsByName.Add(rng.Name, rng);
         }
 
         public ICollection<IPadDataGenerator> RNGs { get { return rngs.Values; } }
@@ -126,9 +140,19 @@ namespace LokeyLib
             return rngs[uid];
         }
 
+        public IPadDataGenerator GetRNG(string name)
+        {
+            return rngsByName[name];
+        }
+
         public void SetDefaultRNG(UInt32 uid)
         {
             DefaultRNG = GetRNG(uid);
+        }
+
+        public void SetDefaultRNG(string name)
+        {
+            DefaultRNG = GetRNG(name);
         }
 
 

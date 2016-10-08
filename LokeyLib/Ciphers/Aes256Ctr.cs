@@ -103,7 +103,7 @@ namespace LokeyLib
             try
             {
                 bool testsSucceeded = true;
-                IPadDataGenerator rng = CryptoAlgorithmCache.Instance.GetRNG(1U);
+				IPadDataGenerator rng = CryptoAlgorithmCache.Instance.DefaultRNG;
                 pad = SimplePad.Create(new System.IO.FileInfo("test" + SimplePad.DefaultExt), new System.IO.FileInfo("test" + SimplePadIndex.DefaultExt), rng, 1UL << 26);
                 Aes256Ctr ctr = new Aes256Ctr();
                 Aes256CtrPadIvAlgorithm ctrAlg = new Aes256CtrPadIvAlgorithm();

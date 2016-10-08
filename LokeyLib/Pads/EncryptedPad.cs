@@ -298,7 +298,7 @@ namespace LokeyLib
             try
             {
                 bool testsSucceeded = true;
-                IPadDataGenerator rng = CryptoAlgorithmCache.Instance.GetRNG(1);
+				IPadDataGenerator rng = CryptoAlgorithmCache.Instance.DefaultRNG;
                 byte[] key = rng.GetPadData(KeyLength);
                 FileInfo file = UtilityFunctions.GenerateTestPlaintextFile("test.bin", 1 << 15);
                 try

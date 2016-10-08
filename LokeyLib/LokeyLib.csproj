@@ -98,6 +98,7 @@
     <Compile Include="Pads\SimplePad.cs" />
     <Compile Include="Pads\SimplePadIndex.cs" />
     <Compile Include="UtilityFunctions.cs" />
+    <Compile Include="RNGs\DevUrandomPadDataGenerator.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
