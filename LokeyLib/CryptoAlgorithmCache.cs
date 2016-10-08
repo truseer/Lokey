@@ -102,7 +102,7 @@ namespace LokeyLib
         public void Add(ICryptoAlgorithmFactory algorithm)
         {
             algorithms.Add(algorithm.UID, algorithm);
-            algorithmsByName.Add(algorithm.Name, algorithm);
+            algorithmsByName.Add(algorithm.Name.ToLowerInvariant(), algorithm);
         }
 
         public ICollection<ICryptoAlgorithmFactory> Algorithms { get { return algorithms.Values; } }
@@ -114,7 +114,7 @@ namespace LokeyLib
 
         public ICryptoAlgorithmFactory GetAlgorithm(string name)
         {
-            return algorithmsByName[name];
+            return algorithmsByName[name.ToLowerInvariant()];
         }
 
         public void SetDefaultCryptoAlgorithm(UInt32 uid)
@@ -130,7 +130,7 @@ namespace LokeyLib
         public void Add(IPadDataGenerator rng)
         {
             rngs.Add(rng.UID, rng);
-            rngsByName.Add(rng.Name, rng);
+            rngsByName.Add(rng.Name.ToLowerInvariant(), rng);
         }
 
         public ICollection<IPadDataGenerator> RNGs { get { return rngs.Values; } }
@@ -142,7 +142,7 @@ namespace LokeyLib
 
         public IPadDataGenerator GetRNG(string name)
         {
-            return rngsByName[name];
+            return rngsByName[name.ToLowerInvariant()];
         }
 
         public void SetDefaultRNG(UInt32 uid)
