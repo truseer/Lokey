@@ -78,7 +78,7 @@ namespace Lokey
                 }
                 else
                 {
-                    AbstractPad pad = pmd.LonePads.Single(p => p.Identifier.Equals(padId));
+                    AbstractPad pad = pmd.LonePads.Single(p => p.Identifier.ToLowerInvariant().Equals(padId));
                     WritePadInfo(pad);
                 }
             }
