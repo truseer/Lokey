@@ -35,7 +35,7 @@ namespace Lokey
         private const string ChunkSizeFlag = "--chunk_size";
         private const string EncryptedFlag = "--encrypted";
         private const string RngFlag = "--rng";
-        private const string RngNameFlag = "--rng";
+        private const string RngNameFlag = "--rng_name";
 
         public Create(ManagementSelectionType type)
         {
