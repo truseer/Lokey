@@ -101,39 +101,48 @@ namespace Lokey
                     Console.WriteLine(e.Message);
                     return;
                 }
-                IPadDataGenerator rng = CryptoAlgorithmCache.Instance.DefaultRNG;
-                int chunkSize = Program.DefaultChunkSize;
 
-                if (flags[ChunkSizeFlag].Found)
-                    chunkSize = int.Parse(flags[ChunkSizeFlag].Args.Single());
-                
-                if(flags[RngFlag].Found)
+                if (args.Any())
                 {
-                    if (flags[RngNameFlag].Found)
-                    {
-                        Console.WriteLine("Multiple RNGs cannot be specified for " + SelectionTypeString() + " creation.");
-                        return;
-                    }
-                    rng = CryptoAlgorithmCache.Instance.GetRNG(uint.Parse(flags[RngFlag].Args.Single()));
-                }
-                else if(flags[RngNameFlag].Found)
-                {
-                    rng = CryptoAlgorithmCache.Instance.GetRNG(flags[RngNameFlag].Args.Single());
-                }
-
-                if(IsPad)
-                {
-                    if (flags[EncryptedFlag].Found)
-                        pmd.GenerateEncryptedPad(selection, rng, size, chunkSize);
-                    else
-                        pmd.GenerateLonePad(selection, rng, size, chunkSize);
+                    Console.Write("Unknown arguments passed to " + Name + " subcommand: ");
+                    Console.WriteLine(SubCommandModule.JoinArgs(args));
                 }
                 else
                 {
-                    if (flags[EncryptedFlag].Found)
-                        pmd.GenerateEncryptedConnection(selection, rng, size, chunkSize);
+                    IPadDataGenerator rng = CryptoAlgorithmCache.Instance.DefaultRNG;
+                    int chunkSize = Program.DefaultChunkSize;
+
+                    if (flags[ChunkSizeFlag].Found)
+                        chunkSize = int.Parse(flags[ChunkSizeFlag].Args.Single());
+
+                    if (flags[RngFlag].Found)
+                    {
+                        if (flags[RngNameFlag].Found)
+                        {
+                            Console.WriteLine("Multiple RNGs cannot be specified for " + SelectionTypeString() + " creation.");
+                            return;
+                        }
+                        rng = CryptoAlgorithmCache.Instance.GetRNG(uint.Parse(flags[RngFlag].Args.Single()));
+                    }
+                    else if (flags[RngNameFlag].Found)
+                    {
+                        rng = CryptoAlgorithmCache.Instance.GetRNG(flags[RngNameFlag].Args.Single());
+                    }
+
+                    if (IsPad)
+                    {
+                        if (flags[EncryptedFlag].Found)
+                            pmd.GenerateEncryptedPad(selection, rng, size, chunkSize);
+                        else
+                            pmd.GenerateLonePad(selection, rng, size, chunkSize);
+                    }
                     else
-                        pmd.GenerateConnection(selection, rng, size, chunkSize);
+                    {
+                        if (flags[EncryptedFlag].Found)
+                            pmd.GenerateEncryptedConnection(selection, rng, size, chunkSize);
+                        else
+                            pmd.GenerateConnection(selection, rng, size, chunkSize);
+                    }
                 }
             }
             else

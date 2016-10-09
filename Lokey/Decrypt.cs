@@ -93,28 +93,32 @@ namespace Lokey
                     Console.WriteLine(e.Message);
                     return;
                 }
-                if(args.Any())
+                if (args.Any())
                 {
-                    Console.WriteLine("Unknown arguments passed to " + NameConst + " subcommand");
-                }
-                if (flags[ChunkFlag].Found)
-                    chunkSize = int.Parse(flags[ChunkFlag].Args.Single());
-                if (IsPad)
-                {
-                    pmd.DecryptFileFromPad(selection, file, chunkSize);
+                    Console.Write("Unknown arguments passed to " + NameConst + " subcommand: ");
+                    Console.WriteLine(SubCommandModule.JoinArgs(args));
                 }
                 else
                 {
-                    pmd.DecryptFileFromConnection(selection, file, chunkSize);
+                    if (flags[ChunkFlag].Found)
+                        chunkSize = int.Parse(flags[ChunkFlag].Args.Single());
+                    if (IsPad)
+                    {
+                        pmd.DecryptFileFromPad(selection, file, chunkSize);
+                    }
+                    else
+                    {
+                        pmd.DecryptFileFromConnection(selection, file, chunkSize);
+                    }
+                    NamePackedFile namePack = new NamePackedFile(filePath);
+                    if (namePack.FileNameIsPacked)
+                        namePack.UnpackFileName();
+                    Console.Write("\"");
+                    Console.Write(filePath);
+                    Console.Write("\" decrypted to: \"");
+                    Console.Write(namePack.FilePath);
+                    Console.WriteLine("\".");
                 }
-                NamePackedFile namePack = new NamePackedFile(filePath);
-                if (namePack.FileNameIsPacked)
-                    namePack.UnpackFileName();
-                Console.Write("\"");
-                Console.Write(filePath);
-                Console.Write("\" decrypted to: \"");
-                Console.Write(namePack.FilePath);
-                Console.WriteLine("\".");
             }
             else
             {

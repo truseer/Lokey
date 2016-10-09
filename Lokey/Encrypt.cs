@@ -102,38 +102,46 @@ namespace Lokey
                     Console.WriteLine(e.Message);
                     return;
                 }
-                if (flags[ChunkSizeFlag].Found)
-                    chunkSize = int.Parse(flags[ChunkSizeFlag].Args.Single());
-                if(flags[CipherFlag].Found)
+                if (args.Any())
                 {
-                    if (flags[CipherNameFlag].Found)
-                    {
-                        Console.WriteLine("Cipher cannot be specified multiple times for encrypt operation.");
-                        return;
-                    }
-                    alg = CryptoAlgorithmCache.Instance.GetAlgorithm(uint.Parse(flags[CipherFlag].Args.Single()));
-                }
-                else if(flags[CipherNameFlag].Found)
-                {
-                    alg = CryptoAlgorithmCache.Instance.GetAlgorithm(flags[CipherFlag].Args.Single());
-                }
-                NamePackedFile npf = new NamePackedFile(filePath);
-                if (!npf.FileNameIsPacked && !flags[PreserveNameFlag].Found)
-                    npf.PackFileName();
-                FileInfo file = new FileInfo(npf.FilePath);
-                if (IsPad)
-                {
-                    pmd.EncryptFileFromPad(selection, file, alg, chunkSize);
+                    Console.Write("Unknown arguments passed to " + Name + " subcommand: ");
+                    Console.WriteLine(SubCommandModule.JoinArgs(args));
                 }
                 else
                 {
-                    pmd.EncryptFileFromConnection(selection, file, alg, chunkSize);
+                    if (flags[ChunkSizeFlag].Found)
+                        chunkSize = int.Parse(flags[ChunkSizeFlag].Args.Single());
+                    if (flags[CipherFlag].Found)
+                    {
+                        if (flags[CipherNameFlag].Found)
+                        {
+                            Console.WriteLine("Cipher cannot be specified multiple times for encrypt operation.");
+                            return;
+                        }
+                        alg = CryptoAlgorithmCache.Instance.GetAlgorithm(uint.Parse(flags[CipherFlag].Args.Single()));
+                    }
+                    else if (flags[CipherNameFlag].Found)
+                    {
+                        alg = CryptoAlgorithmCache.Instance.GetAlgorithm(flags[CipherFlag].Args.Single());
+                    }
+                    NamePackedFile npf = new NamePackedFile(filePath);
+                    if (!npf.FileNameIsPacked && !flags[PreserveNameFlag].Found)
+                        npf.PackFileName();
+                    FileInfo file = new FileInfo(npf.FilePath);
+                    if (IsPad)
+                    {
+                        pmd.EncryptFileFromPad(selection, file, alg, chunkSize);
+                    }
+                    else
+                    {
+                        pmd.EncryptFileFromConnection(selection, file, alg, chunkSize);
+                    }
+                    Console.Write("\"");
+                    Console.Write(filePath);
+                    Console.Write("\" encrypted to: \"");
+                    Console.Write(npf.FilePath);
+                    Console.WriteLine("\".");
                 }
-                Console.Write("\"");
-                Console.Write(filePath);
-                Console.Write("\" encrypted to: \"");
-                Console.Write(npf.FilePath);
-                Console.WriteLine("\".");
             }
             else
             {
