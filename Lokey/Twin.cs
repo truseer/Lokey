@@ -31,6 +31,8 @@ namespace Lokey
     {
         private const string NameConst = "twin";
 
+        private Mgmt tgtDirParser = new Mgmt();
+
         public IEnumerable<string> HelpLines
         {
             get
@@ -42,7 +44,7 @@ namespace Lokey
             }
         }
 
-        public string HelpPrefix { get { return NameConst + " <target_directory>"; } }
+        public string HelpPrefix { get { return NameConst + " " + Mgmt.HelpArgs; } }
 
         public string Name { get { return NameConst; } }
 
@@ -52,13 +54,9 @@ namespace Lokey
         {
             if(args.Any())
             {
-                string dirPath = args.Single();
-                DirectoryInfo tgtdir = new DirectoryInfo(dirPath);
-                if (pmd.Connections.Single(conn => conn.Name.Equals(selection)) is IEncryptionPadObject)
-                {
-                    throw new NotImplementedException("Twin not implemented for encrypted pads");
-                }
-                pmd.TwinConnection(selection, tgtdir);
+                PadManagementDirectory tgtPmd = tgtDirParser.ParseArgs(ref args);
+                if(tgtPmd != null)
+                    pmd.TwinConnection(selection, tgtPmd);
             }
             else
             {

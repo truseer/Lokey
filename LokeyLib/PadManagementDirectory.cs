@@ -229,9 +229,13 @@ namespace LokeyLib
                 : (AbstractPad)GenerateEncryptedPad(name, rng, size, writeBlockSize);
         }
         
-        public IPadConnection TwinConnection(string name, DirectoryInfo tgtDir)
+        public IPadConnection TwinConnection(string name, PadManagementDirectory tgtDir, IPadDataGenerator rng = null)
         {
-            return connections[name].Twin(tgtDir);
+            IPadConnection twinnedConn = connections[name].Twin(tgtDir.Dir);
+            IEncryptionPadObject econn = twinnedConn as IEncryptionPadObject;
+            if (econn != null)
+                econn.UpdateEncryption(tgtDir.key, rng ?? CryptoAlgorithmCache.Instance.DefaultRNG);
+            return twinnedConn;
         }
 
         public void UpdateEncryption(string password, IPadDataGenerator rng, bool updateIVs = true, bool forceUpdateSalt = false)

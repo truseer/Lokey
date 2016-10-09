@@ -31,7 +31,7 @@ namespace Lokey
     {
         private Dictionary<string, IManagementModule> submodules = new IManagementModule[] {
             new Connection(),
-            new Pad(), 
+            new Pad(),
             new Update()
         }.ToDictionary(mod => mod.Name);
 
@@ -40,8 +40,8 @@ namespace Lokey
         private const string PasswordFlag = "--password";
         private const string RngFlag = "--rng";
         private const string RngNameFlag = "--rng_name";
-        private const string HelpPrefixConst = NameConst
-            + " <root_directory> [" + PasswordFlag + " <password>] ["
+        private const string HelpPrefixConst = NameConst + " " + HelpArgs;
+        public const string HelpArgs = "<root_directory> [" + PasswordFlag + " <password>] ["
             + RngNameFlag + " <rng_name> | " + RngFlag + " <UID>]";
 
         public string Name { get { return NameConst; } }
@@ -64,7 +64,7 @@ namespace Lokey
             get { return submodules.Values.Cast<ISubCommandModule>().ToDictionary(m => m.Name); }
         }
 
-        public void ProcessCommand(IEnumerable<string> args, Dictionary<string, ISubCommandModule> unused)
+        public PadManagementDirectory ParseArgs(ref IEnumerable<string> args)
         {
             if (args.Any())
             {
@@ -82,10 +82,10 @@ namespace Lokey
                         new SubCommandModule.FlagArg(RngNameFlag, 1)
                         });
                 }
-                catch(InvalidOperationException e)
+                catch (InvalidOperationException e)
                 {
                     Console.WriteLine(e.Message);
-                    return;
+                    return null;
                 }
 
                 if (flags[RngFlag].Found)
@@ -93,11 +93,11 @@ namespace Lokey
                     if (flags[RngNameFlag].Found)
                     {
                         Console.WriteLine("RNG cannot be specified twice for pad management directory load");
-                        return;
+                        return null;
                     }
                     rng = CryptoAlgorithmCache.Instance.GetRNG(uint.Parse(flags[RngFlag].Args.Single()));
                 }
-                else if(flags[RngNameFlag].Found)
+                else if (flags[RngNameFlag].Found)
                 {
                     rng = CryptoAlgorithmCache.Instance.GetRNG(flags[RngFlag].Args.Single());
                 }
@@ -108,10 +108,24 @@ namespace Lokey
                 PadManagementDirectory pmd = password == null
                     ? new PadManagementDirectory(mgmtDir, (byte[])null, rng)
                     : new PadManagementDirectory(mgmtDir, password, rng);
-                if(args.Any())
+                return pmd;
+            }
+            else
+            {
+                Console.WriteLine("A root directory must be specified for the mgmt directory.");
+            }
+            return null;
+        }
+
+        public void ProcessCommand(IEnumerable<string> args, Dictionary<string, ISubCommandModule> unused)
+        {
+            PadManagementDirectory pmd = ParseArgs(ref args);
+            if (pmd != null)
+            {
+                if (args.Any())
                 {
                     IManagementModule mgmtMod;
-                    if(submodules.TryGetValue(args.First(), out mgmtMod))
+                    if (submodules.TryGetValue(args.First(), out mgmtMod))
                     {
                         mgmtMod.ProcessCommand(args.Skip(1), pmd);
                     }
@@ -132,10 +146,6 @@ namespace Lokey
                     foreach (string padId in pmd.LonePadIDs)
                         Console.WriteLine(padId);
                 }
-            }
-            else
-            {
-                Console.WriteLine("A root directory must be specified for the mgmt command.");
             }
         }
     }
