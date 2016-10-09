@@ -101,7 +101,8 @@ namespace LokeyLib
                     {
                         sw.WriteLine(GetPathRelativeToIndex(To.IndexFilePath));
                         sw.WriteLine(GetPathRelativeToIndex(From.IndexFilePath));
-                        byte[] buffer = ms.GetBuffer();
+                        sw.Flush();
+                        byte[] buffer = ms.ToArray();
                         Aes256Ctr aes = new Aes256Ctr();
                         buffer = aes.EncryptBytes(key, iv, buffer, true);
                         fs.Write(buffer, 0, buffer.Length);
@@ -125,7 +126,7 @@ namespace LokeyLib
                 entries = new Aes256Ctr().DecryptBytes(key, iv, entries, true);
                 using (MemoryStream ms = new MemoryStream(entries))
                 {
-                    using (StreamReader sr = new StreamReader(fs, Encoding.UTF8))
+                    using (StreamReader sr = new StreamReader(ms, Encoding.UTF8))
                     {
                         string toPadIndexRelativeFilePath = sr.ReadLine();
                         FileInfo toPadIndexFile = new FileInfo(Path.Combine(connectionFile.Directory.FullName, toPadIndexRelativeFilePath));

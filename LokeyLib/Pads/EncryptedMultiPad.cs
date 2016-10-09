@@ -198,7 +198,8 @@ namespace LokeyLib
                         {
                             sw.WriteLine(GetPathRelativeToIndex(pad.PadFileInfo.FullName));
                         }
-                        byte[] buffer = ms.GetBuffer();
+                        sw.Flush();
+                        byte[] buffer = ms.ToArray();
                         buffer = new Aes256Ctr().EncryptBytes(key, iv, buffer, true);
                         fs.Write(buffer, 0, buffer.Length);
                     }
