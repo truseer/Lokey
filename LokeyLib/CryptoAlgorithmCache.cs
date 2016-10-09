@@ -49,6 +49,9 @@ namespace LokeyLib
             DevRandomPadDataGenerator devRandom = new DevRandomPadDataGenerator();
             if (devRandom.AvailableOnPlatform)
                 Add(devRandom);
+			DevUrandomPadDataGenerator devUrandom = new DevUrandomPadDataGenerator();
+			if (devUrandom.AvailableOnPlatform)
+				Add(devUrandom);
 
             if (autoSearch)
             {

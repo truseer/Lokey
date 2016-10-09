@@ -17,6 +17,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /***********************************************************************/
 
+using System;
+
 namespace LokeyLib
 {
     public class DevRandomPadDataGenerator : AbstractDevPadDataGenerator
@@ -26,5 +28,29 @@ namespace LokeyLib
         public override uint UID { get { return 2; } }
 
         protected override string SourceFilePath { get { return "/dev/random"; } }
+
+#if DEBUG
+		public static bool RunTest()
+		{
+			const string className = "DevRandomPadDataGenerator";
+			try
+			{
+				UtilityFunctions.WriteTestsHeaderFooter(className, true);
+				byte[] emptyBits = new byte[16];
+				Array.Clear(emptyBits, 0, emptyBits.Length);
+				byte[] randomBits = CryptoAlgorithmCache.Instance.GetRNG(2U).GetPadData(16UL);
+				return UtilityFunctions.WriteTestResult(className, "/dev/random Read", randomBits.Length == 16 && !UtilityFunctions.ByteArraysEqual(emptyBits, randomBits));
+			}
+			catch(Exception e)
+			{
+				UtilityFunctions.WriteTestExceptionFailure (className, e);
+				return false;
+			}
+			finally
+			{
+				UtilityFunctions.WriteTestsHeaderFooter (className, false);
+			}
+		}
+#endif
     }
 }

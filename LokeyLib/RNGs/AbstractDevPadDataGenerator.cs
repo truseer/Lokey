@@ -41,7 +41,7 @@ namespace LokeyLib
 
         public void GetPadData(byte[] bytes)
         {
-            using (FileStream fs = File.Open(SourceFilePath, FileMode.Open, FileAccess.Read))
+            using (FileStream fs = File.Open(SourceFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 ulong bytesRead = 0UL;
                 do
@@ -57,8 +57,8 @@ namespace LokeyLib
                             throw new CouldNotCreatePadException("Could not read from " + SourceFilePath);
                         bytesReadThisPass += bytesReadThisTry;
                     } while (bytesReadThisPass < bytesThisPass.Length);
-                    bytesRead += (ulong)bytesReadThisPass;
-                    Array.Copy(bytesThisPass, 0L, bytes, (long)bytesRead, bytesThisPass.LongLength);
+					Array.Copy(bytesThisPass, 0L, bytes, (long)bytesRead, bytesThisPass.LongLength);
+					bytesRead += (ulong)bytesReadThisPass;
                 } while (bytesRead < (ulong)bytes.LongLength);
             }
         }
