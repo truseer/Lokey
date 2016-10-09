@@ -38,10 +38,12 @@ namespace Lokey
         public const string NameConst = "mgmt";
 
         private const string PasswordFlag = "--password";
+        private const string QueryPasswordFlag = "--query_password";
         private const string RngFlag = "--rng";
         private const string RngNameFlag = "--rng_name";
         private const string HelpPrefixConst = NameConst + " " + HelpArgs;
-        public const string HelpArgs = "<root_directory> [" + PasswordFlag + " <password>] ["
+        public const string HelpArgs = "<root_directory> [" + PasswordFlag 
+            + " <password> | " + QueryPasswordFlag + "] ["
             + RngNameFlag + " <rng_name> | " + RngFlag + " <UID>]";
 
         public string Name { get { return NameConst; } }
@@ -64,6 +66,15 @@ namespace Lokey
             get { return submodules.Values.Cast<ISubCommandModule>().ToDictionary(m => m.Name); }
         }
 
+        private static string QueryPassword()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Please enter pad management directory password:");
+            string password = Console.ReadLine();
+            Console.WriteLine();
+            return password;
+        }
+
         public static PadManagementDirectory ParseArgs(ref IEnumerable<string> args)
         {
             if (args.Any())
@@ -79,7 +90,8 @@ namespace Lokey
                         new SubCommandModule.FlagArg[] {
                         new SubCommandModule.FlagArg(PasswordFlag, 1),
                         new SubCommandModule.FlagArg(RngFlag, 1),
-                        new SubCommandModule.FlagArg(RngNameFlag, 1)
+                        new SubCommandModule.FlagArg(RngNameFlag, 1),
+                        new SubCommandModule.FlagArg(QueryPasswordFlag)
                         });
                 }
                 catch (InvalidOperationException e)
@@ -103,7 +115,18 @@ namespace Lokey
                 }
 
                 if (flags[PasswordFlag].Found)
+                {
+                    if(flags[QueryPasswordFlag].Found)
+                    {
+                        Console.WriteLine("Password cannot be specified both through query and at command line");
+                        return null;
+                    }
                     password = flags[PasswordFlag].Args.Single();
+                }
+                else if(flags[QueryPasswordFlag].Found)
+                {
+                    password = QueryPassword();
+                }
 
                 PadManagementDirectory pmd = password == null
                     ? new PadManagementDirectory(mgmtDir, (byte[])null, rng)

@@ -53,8 +53,16 @@ namespace Lokey
             if(args.Any())
             {
                 PadManagementDirectory tgtPmd = Mgmt.ParseArgs(ref args);
-                if(tgtPmd != null)
-                    pmd.TwinConnection(selection, tgtPmd);
+                if (args.Any())
+                {
+                    Console.Write("Unknown arguments to twin subcommand: ");
+                    Console.WriteLine(SubCommandModule.JoinArgs(args));
+                }
+                else
+                {
+                    if (tgtPmd != null)
+                        pmd.TwinConnection(selection, tgtPmd);
+                }
             }
             else
             {
