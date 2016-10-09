@@ -30,9 +30,7 @@ namespace Lokey
     class Twin : ISelectedManagementItemModule
     {
         private const string NameConst = "twin";
-
-        private Mgmt tgtDirParser = new Mgmt();
-
+        
         public IEnumerable<string> HelpLines
         {
             get
@@ -54,7 +52,7 @@ namespace Lokey
         {
             if(args.Any())
             {
-                PadManagementDirectory tgtPmd = tgtDirParser.ParseArgs(ref args);
+                PadManagementDirectory tgtPmd = Mgmt.ParseArgs(ref args);
                 if(tgtPmd != null)
                     pmd.TwinConnection(selection, tgtPmd);
             }

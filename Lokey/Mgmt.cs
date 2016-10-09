@@ -64,7 +64,7 @@ namespace Lokey
             get { return submodules.Values.Cast<ISubCommandModule>().ToDictionary(m => m.Name); }
         }
 
-        public PadManagementDirectory ParseArgs(ref IEnumerable<string> args)
+        public static PadManagementDirectory ParseArgs(ref IEnumerable<string> args)
         {
             if (args.Any())
             {
