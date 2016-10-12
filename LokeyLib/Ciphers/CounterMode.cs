@@ -125,7 +125,6 @@ namespace LokeyLib
 
         public void Dispose()
         {
-            throw new NotImplementedException();
         }
     }
 }

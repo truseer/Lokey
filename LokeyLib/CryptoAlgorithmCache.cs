@@ -23,7 +23,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 
 namespace LokeyLib
 {
@@ -32,12 +31,13 @@ namespace LokeyLib
         private static CryptoAlgorithmCache _instance = new CryptoAlgorithmCache();
         public static CryptoAlgorithmCache Instance { get { return _instance; } }
 
-        public CryptoAlgorithmCache(bool autoSearch = false)
+        public CryptoAlgorithmCache()
         {
             // Add Encryption Algorithms
             // Add(new NoEncryptionAlgorithmFactory());
             Add(new OneTimePadAlgorithmFactory());
-            Add(new Aes256CbcPadIvAlgorithmFactory());
+            ICryptoAlgorithmFactory defaultAlg = new Aes256CbcPadIvAlgorithmFactory();
+            Add(defaultAlg);
             Add(new Aes256EcbPadIvAlgorithmFactory());
             Add(new Aes256CtrPadIvAlgorithmFactory());
             Add(new AesCtrFactory(AesBlockCipher.AesKeyLength._128Bits));
@@ -45,7 +45,8 @@ namespace LokeyLib
             Add(new AesCtrFactory(AesBlockCipher.AesKeyLength._256Bits));
 
             // Add Pad Generators
-            Add(new DotNetDefaultPadDataGenerator());
+            IPadDataGenerator defaultRng = new DotNetDefaultPadDataGenerator();
+            Add(defaultRng);
             DevRandomPadDataGenerator devRandom = new DevRandomPadDataGenerator();
             if (devRandom.AvailableOnPlatform)
                 Add(devRandom);
@@ -53,54 +54,38 @@ namespace LokeyLib
 			if (devUrandom.AvailableOnPlatform)
 				Add(devUrandom);
 
-            if (autoSearch)
-            {
-                Assembly[] startingAssemblies = new Assembly[] { Assembly.GetEntryAssembly(), Assembly.GetExecutingAssembly() };
-                HashSet<string> assemblyPaths = new HashSet<string>(startingAssemblies.Select(assmbly => assmbly.FullName));
-                IEnumerable<FileInfo> assemblyDirFiles = assemblyPaths.SelectMany(assmbly => new FileInfo(assmbly).Directory.EnumerateFiles().Where(file => !assemblyPaths.Contains(file.FullName)));
-                foreach (Assembly assembly in startingAssemblies.Concat(assemblyDirFiles
-                    .Select(file =>
-                    {
-                        try { return Assembly.LoadFrom(file.FullName); }
-                        catch { return null; }
-                    })
-                    .Where(loaded => loaded != null)))
-                {
-                    foreach (Type t in assembly.ExportedTypes.Where(type => type.GetInterfaces().Contains(typeof(ICryptoAlgorithmFactory))))
-                    {
-                        try
-                        {
-                            ConstructorInfo ci = t.GetConstructor(Type.EmptyTypes);
-                            ICryptoAlgorithmFactory alg = ci.Invoke(new object[] { }) as ICryptoAlgorithmFactory;
-                            if (alg != null)
-                                Add(alg);
-                        }
-                        catch { }
-                    }
-                    foreach (Type t in assembly.ExportedTypes.Where(type => type.GetInterfaces().Contains(typeof(IPadDataGenerator))))
-                    {
-                        try
-                        {
-                            ConstructorInfo ci = t.GetConstructor(Type.EmptyTypes);
-                            IPadDataGenerator alg = ci.Invoke(new object[] { }) as IPadDataGenerator;
-                            if (alg != null)
-                                Add(alg);
-                        }
-                        catch { }
-                    }
-                }
-            }
-            DefaultRNG = GetRNG(1);
-            DefaultCryptoAlgorithm = GetAlgorithm(2);
+            // Add Hash Algorithms
+            Add(MD5HashAlgorthm.Factory);
+            Add(SHA1HashAlgorithm.Factory);
+            Add(SHA256HashAlgorithm.Factory);
+            Add(SHA384HashAlgorithm.Factory);
+            Add(RIPEMD160HashAlgorithm.Factory);
+            IHashAlgorithmFactory sha512 = SHA512HashAlgorithm.Factory;
+            Add(sha512);
+
+            DefaultRNG = defaultRng;
+            DefaultCryptoAlgorithm = defaultAlg;
+            DefaultHashAlgorithm = sha512;
         }
 
         private Dictionary<UInt32, ICryptoAlgorithmFactory> algorithms = new Dictionary<uint, ICryptoAlgorithmFactory>();
         private Dictionary<string, ICryptoAlgorithmFactory> algorithmsByName = new Dictionary<string, ICryptoAlgorithmFactory>();
         private Dictionary<UInt32, IPadDataGenerator> rngs = new Dictionary<uint, IPadDataGenerator>();
         private Dictionary<string, IPadDataGenerator> rngsByName = new Dictionary<string, IPadDataGenerator>();
+        private Dictionary<uint, IHashAlgorithmFactory> hashAlgs = new Dictionary<uint, IHashAlgorithmFactory>();
+        private Dictionary<string, IHashAlgorithmFactory> hashAlgsByName = new Dictionary<string, IHashAlgorithmFactory>();
+        private Dictionary<uint, IStreamCipher> streamCiphers = new Dictionary<uint, IStreamCipher>();
+        private Dictionary<uint, IStreamCipher> streamCiphersByName = new Dictionary<uint, IStreamCipher>();
 
         public IPadDataGenerator DefaultRNG { get; private set; }
         public ICryptoAlgorithmFactory DefaultCryptoAlgorithm { get; private set; }
+        public IHashAlgorithmFactory DefaultHashAlgorithm { get; private set; }
+
+        public void Add(IHashAlgorithmFactory hashFactory)
+        {
+            hashAlgs.Add(hashFactory.UID, hashFactory);
+            hashAlgsByName.Add(hashFactory.Name, hashFactory);
+        }
 
         public void Add(ICryptoAlgorithmFactory algorithm)
         {
@@ -108,7 +93,17 @@ namespace LokeyLib
             algorithmsByName.Add(algorithm.Name.ToLowerInvariant(), algorithm);
         }
 
+        public void Add(IPadDataGenerator rng)
+        {
+            rngs.Add(rng.UID, rng);
+            rngsByName.Add(rng.Name.ToLowerInvariant(), rng);
+        }
+
         public ICollection<ICryptoAlgorithmFactory> Algorithms { get { return algorithms.Values; } }
+
+        public ICollection<IPadDataGenerator> RNGs { get { return rngs.Values; } }
+
+        public ICollection<IHashAlgorithmFactory> HashAlgorithms { get { return hashAlgs.Values; } }
 
         public ICryptoAlgorithmFactory GetAlgorithm(UInt32 uid)
         {
@@ -130,14 +125,6 @@ namespace LokeyLib
             DefaultCryptoAlgorithm = GetAlgorithm(name);
         }
 
-        public void Add(IPadDataGenerator rng)
-        {
-            rngs.Add(rng.UID, rng);
-            rngsByName.Add(rng.Name.ToLowerInvariant(), rng);
-        }
-
-        public ICollection<IPadDataGenerator> RNGs { get { return rngs.Values; } }
-
         public IPadDataGenerator GetRNG(UInt32 uid)
         {
             return rngs[uid];
@@ -158,6 +145,25 @@ namespace LokeyLib
             DefaultRNG = GetRNG(name);
         }
 
+        public IHashAlgorithmFactory GetHashAlgorithm(uint uid)
+        {
+            return hashAlgs[uid];
+        }
+
+        public IHashAlgorithmFactory GetHashAlgorithm(string name)
+        {
+            return hashAlgsByName[name];
+        }
+
+        public void SetDefaultHashAlgorithm(uint uid)
+        {
+            DefaultHashAlgorithm = GetHashAlgorithm(uid);
+        }
+
+        public void SetDefaultHashAlgorithm(string name)
+        {
+            DefaultHashAlgorithm = GetHashAlgorithm(name);
+        }
 
 #if DEBUG
         private const string ClassName = "CryptoAlgorithmCache";

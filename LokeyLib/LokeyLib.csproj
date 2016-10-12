@@ -59,6 +59,17 @@
     <Compile Include="CircularBuffer.cs" />
     <Compile Include="Exceptions\TransformException.cs" />
     <Compile Include="FileComponentListable.cs" />
+    <Compile Include="Hash\AbstractHashAlgorithmFactory.cs" />
+    <Compile Include="Hash\FunctionalHashAlgorithmFactory.cs" />
+    <Compile Include="Hash\IHashAlgorithm.cs" />
+    <Compile Include="Hash\IHashAlgorithmFactory.cs" />
+    <Compile Include="Hash\AbstractSystemCryptoHashAlgorithm.cs" />
+    <Compile Include="Hash\MD5HashAlgorthm.cs" />
+    <Compile Include="Hash\RIPEMD160HashAlgorithm.cs" />
+    <Compile Include="Hash\SHA1HashAlgorithm.cs" />
+    <Compile Include="Hash\SHA256HashAlgorithm.cs" />
+    <Compile Include="Hash\SHA384HashAlgorithm.cs" />
+    <Compile Include="Hash\SHA512HashAlgorithm.cs" />
     <Compile Include="IFileComponentListable.cs" />
     <Compile Include="NamePackedFile.cs" />
     <Compile Include="Pads\EncryptedPadConnection.cs" />
