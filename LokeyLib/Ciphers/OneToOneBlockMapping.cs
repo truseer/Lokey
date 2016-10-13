@@ -83,7 +83,7 @@ namespace LokeyLib
             for(long element = NumberOfBlockValues - 1L; element > 0; --element)
             {
                 BigInteger swapIdx;
-                keyVal = BigInteger.DivRem(keyVal, new BigInteger(element), out swapIdx);
+                keyVal = BigInteger.DivRem(keyVal, new BigInteger(element + 1L), out swapIdx);
                 Swap(encryptionLookupTable, (long)swapIdx, element);
                 long elementValue = GetElementValue(encryptionLookupTable, element);
                 SetElementValue(decryptionLookupTable, elementValue, element);
