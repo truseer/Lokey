@@ -32,6 +32,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
@@ -55,6 +56,8 @@
     <Compile Include="Ciphers\IBlockCipher.cs" />
     <Compile Include="Ciphers\IStreamCipher.cs" />
     <Compile Include="Ciphers\KeyIvPair.cs" />
+    <Compile Include="Ciphers\OneToOneBlockMapping.cs" />
+    <Compile Include="Ciphers\OneToOneBlockMappingMaxKeyArrays.cs" />
     <Compile Include="Ciphers\StreamCipher.cs" />
     <Compile Include="CircularBuffer.cs" />
     <Compile Include="Exceptions\TransformException.cs" />
